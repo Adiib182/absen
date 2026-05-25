@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Absensi GPS & Kamera</title>
+    <title>Sistem Absensi Kantor Berbasis GPS & Kamera</title>
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; text-align: center; padding: 20px; background: #f4f6f9; margin: 0; }
         .container { max-width: 450px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
@@ -22,6 +22,8 @@
         .btn-masuk { background: #28a745; }
         .btn-pulang { background: #dc3545; }
         .status-lokasi { background: #fff3cd; color: #856404; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 14px; font-weight: bold; display: none; }
+        .form-surat { display: none; text-align: left; background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px dashed #007bff; margin-top: 5px; }
+        .form-surat label { font-size: 13px; font-weight: bold; color: #333; }
     </style>
 </head>
 <body>
@@ -35,6 +37,17 @@
     </div>
 
     <input type="text" id="globalNama" placeholder="Masukkan Nama Lengkap Anda" required>
+    
+    <select id="globalDepartemen" required>
+        <option value="" disabled selected>-- Pilih Departemen / Divisi --</option>
+        <option value="IT & Support">IT & Support</option>
+        <option value="HRD & GA">HRD & GA</option>
+        <option value="Finance & Accounting">Finance & Accounting</option>
+        <option value="Collections">Collections</option>
+        <option value="Marketing & Sales">Marketing & Sales</option>
+        <option value="Operasional">Operasional</option>
+        <option value="Umum/Lainnya">Umum / Lainnya</option>
+    </select>
 
     <div id="tab-absen" class="tab-content active">
         <div id="statusLokasi" class="status-lokasi">Memeriksa lokasi GPS Anda...</div>
@@ -47,11 +60,17 @@
     </div>
 
     <div id="tab-izin" class="tab-content">
-        <select id="jenisPengajuan">
+        <select id="jenisPengajuan" onchange="cekJenisPengajuan()">
             <option value="Cuti">Cuti Tahunan</option>
             <option value="Izin">Izin Keperluan</option>
             <option value="Sakit">Sakit (Butuh Surat Dokter)</option>
         </select>
+        
+        <div id="boxSuratDokter" class="form-surat">
+            <label>Foto / Upload Surat Keterangan Dokter:</label>
+            <input type="file" id="fileSuratDokter" accept="image/*" capture="environment">
+        </div>
+
         <input type="date" id="tglMulai">
         <input type="date" id="tglSelesai">
         <textarea id="alasan" rows="3" placeholder="Alasan pengajuan secara detail..."></textarea>
@@ -60,13 +79,13 @@
 </div>
 
 <script>
-    // ==========================================
-    // UBAH 4 CONFIG DI BAWAH INI Sesuai Kantor Kamu
-    // ==========================================
+    // ========================================================
+    // KONFIGURASI UTAMA SISTEM (UBAH SESUAI KANTOR KAMU)
+    // ========================================================
     const GAS_URL = "https://script.google.com/macros/s/AKfycbzJhc8EUhV82Sdv-Ys8VWiMLpXazdmyOlqWQCYG54fy3lMjejyRNNPrUmctIiYqnDG-Og/exec"; 
-    const KANTOR_LAT = -6.188929023860202;  // <--- Ganti dengan Latitude kantor
-    const KANTOR_LON = 106.87366297933345; // <--- Ganti dengan Longitude kantor
-    const RADIUS_MAKSIMAL = 500;   // <--- Jarak toleransi absen dalam satuan Meter
+    const KANTOR_LAT = -6.188929023860202;  // <--- Isi Lintang (Latitude) Kantor
+    const KANTOR_LON = 106.87366297933345; // <--- Isi Bujur (Longitude) Kantor
+    const RADIUS_MAKSIMAL = 50;   // <--- Toleransi Jarak Absen Maksimal (Meter)
 
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
@@ -74,61 +93,45 @@
     const btnMasuk = document.getElementById('btnMasuk');
     const btnPulang = document.getElementById('btnPulang');
 
+    // Mengaktifkan Kamera Depan Otomatis
     navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
     .then(stream => { video.srcObject = stream; })
-    .catch(err => alert("Izin kamera ditolak browser HP. Tolong aktifkan!"));
+    .catch(err => alert("Browser memblokir perizinan kamera. Harap aktifkan!"));
 
+    // Mengaktifkan Pelacakan Koordinat GPS HP Karyawan
     if (navigator.geolocation) {
         statusLokasi.style.display = "block";
         navigator.geolocation.watchPosition(cekLokasiKaryawan, errorGPS, {
             enableHighAccuracy: true,
             timeout: 10000
         });
-    } else {
-        alert("HP Anda tidak mendukung fitur lokasi GPS.");
     }
 
+    // Algoritma Perhitungan Jarak Dua Titik Koordinat (Rumus Haversine)
     function hitungJarak(lat1, lon1, lat2, lon2) {
         const R = 6371e3; 
-        const phi1 = lat1 * Math.PI/180;
-        const phi2 = lat2 * Math.PI/180;
-        const deltaPhi = (lat2-lat1) * Math.PI/180;
-        const deltaLambda = (lon2-lon1) * Math.PI/180;
-        const a = Math.sin(deltaPhi/2) * Math.sin(deltaPhi/2) +
-                  Math.cos(phi1) * Math.cos(phi2) *
-                  Math.sin(deltaLambda/2) * Math.sin(deltaLambda/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        return R * c; 
+        const phi1 = lat1 * Math.PI/180; const phi2 = lat2 * Math.PI/180;
+        const deltaPhi = (lat2-lat1) * Math.PI/180; const deltaLambda = (lon2-lon1) * Math.PI/180;
+        const a = Math.sin(deltaPhi/2) * Math.sin(deltaPhi/2) + Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda/2) * Math.sin(deltaLambda/2);
+        return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))); 
     }
 
+    // Fungsi Validasi Posisi Karyawan Terhadap Jarak Kantor
     function cekLokasiKaryawan(position) {
-        const userLat = position.coords.latitude;
-        const userLon = position.coords.longitude;
-        const jarak = hitungJarak(userLat, userLon, KANTOR_LAT, KANTOR_LON);
-
+        const jarak = hitungJarak(position.coords.latitude, position.coords.longitude, KANTOR_LAT, KANTOR_LON);
         if (jarak <= RADIUS_MAKSIMAL) {
-            statusLokasi.style.backgroundColor = "#d4edda";
-            statusLokasi.style.color = "#155724";
-            statusLokasi.style.borderColor = "#c3e6cb";
             statusLokasi.style.display = "none";
-            btnMasuk.disabled = false;
-            btnPulang.disabled = false;
+            btnMasuk.disabled = false; btnPulang.disabled = false;
         } else {
-            statusLokasi.style.backgroundColor = "#f8d7da";
-            statusLokasi.style.color = "#721c24";
-            statusLokasi.style.borderColor = "#f5c6cb";
-            statusLokasi.style.display = "block";
+            statusLokasi.style.backgroundColor = "#f8d7da"; statusLokasi.style.color = "#721c24"; statusLokasi.style.display = "block";
             statusLokasi.innerText = `Anda di luar area kantor (${Math.round(jarak)} m). Maksimal radius: ${RADIUS_MAKSIMAL} m.`;
-            btnMasuk.disabled = true;
-            btnPulang.disabled = true;
+            btnMasuk.disabled = true; btnPulang.disabled = true;
         }
     }
 
-    function errorGPS(err) {
-        statusLokasi.style.backgroundColor = "#f8d7da";
-        statusLokasi.style.color = "#721c24";
+    function errorGPS() {
         statusLokasi.style.display = "block";
-        statusLokasi.innerText = "Gagal mengunci GPS. Aktifkan Lokasi/GPS Akurasi Tinggi di HP Anda.";
+        statusLokasi.innerText = "Gagal mengunci GPS. Pastikan fitur Lokasi HP aktif dan izin browser diberikan.";
     }
 
     function switchTab(tabId, btn) {
@@ -138,9 +141,23 @@
         btn.classList.add('active');
     }
 
+    function cekJenisPengajuan() {
+        const jenis = document.getElementById('jenisPengajuan').value;
+        const boxSurat = document.getElementById('boxSuratDokter');
+        if (jenis === "Sakit") {
+            boxSurat.style.display = "block";
+        } else {
+            boxSurat.style.display = "none";
+        }
+    }
+
+    // Eksekusi Tombol Absen
     function prosesAbsen(tipe) {
         const nama = document.getElementById('globalNama').value.trim();
+        const depar = document.getElementById('globalDepartemen').value;
+
         if (!nama) return alert("Isi Nama Lengkap Anda terlebih dahulu!");
+        if (!depar) return alert("Silakan pilih Departemen Anda terlebih dahulu!");
 
         const btn = tipe === 'Masuk' ? btnMasuk : btnPulang;
         const originalText = btn.innerText;
@@ -153,42 +170,73 @@
         fetch(GAS_URL, {
             method: "POST",
             mode: "no-cors",
-            body: JSON.stringify({ action: "absen", nama: nama, status: tipe, foto: fotoBase64 })
+            body: JSON.stringify({ action: "absen", nama: nama, departemen: depar, status: tipe, foto: fotoBase64 })
         })
         .then(() => {
             alert(`Absen ${tipe} Berhasil Terkirim!`);
             btn.disabled = false; btn.innerText = originalText;
         }).catch(() => {
-            alert("Gagal koneksi ke server.");
+            alert("Gagal terhubung ke server database.");
             btn.disabled = false; btn.innerText = originalText;
         });
     }
 
+    // Eksekusi Tombol Pengajuan (Cuti/Izin/Sakit)
     function prosesPengajuan() {
         const nama = document.getElementById('globalNama').value.trim();
+        const depar = document.getElementById('globalDepartemen').value;
         const jenis = document.getElementById('jenisPengajuan').value;
         const tglMulai = document.getElementById('tglMulai').value;
         const tglSelesai = document.getElementById('tglSelesai').value;
         const alasan = document.getElementById('alasan').value.trim();
+        const fileInput = document.getElementById('fileSuratDokter');
 
-        if (!nama || !tglMulai || !tglSelesai || !alasan) return alert("Mohon lengkapi semua form!");
+        if (!nama) return alert("Isi Nama Lengkap Anda terlebih dahulu!");
+        if (!depar) return alert("Silakan pilih Departemen Anda terlebih dahulu!");
+        if (!tglMulai || !tglSelesai || !alasan) return alert("Mohon lengkapi seluruh form pengajuan!");
+        if (jenis === "Sakit" && fileInput.files.length === 0) return alert("Wajib melampirkan foto / bukti Surat Dokter!");
 
         const btn = document.getElementById('btnKirimIzin');
         btn.disabled = true; btn.innerText = "Mengirim...";
 
+        const dataPayload = {
+            action: "pengajuan",
+            nama: nama,
+            departemen: depar,
+            jenis: jenis,
+            tglMulai: tglMulai,
+            tglSelesai: tglSelesai,
+            alasan: alasan,
+            suratDokter: null
+        };
+
+        if (jenis === "Sakit" && fileInput.files.length > 0) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                dataPayload.suratDokter = e.target.result;
+                kirimDataKeGAS(dataPayload, btn);
+            };
+            reader.readAsDataURL(fileInput.files[0]);
+        } else {
+            kirimDataKeGAS(dataPayload, btn);
+        }
+    }
+
+    function kirimDataKeGAS(payload, btn) {
         fetch(GAS_URL, {
             method: "POST",
             mode: "no-cors",
-            body: JSON.stringify({ action: "pengajuan", nama: nama, jenis: jenis, tglMulai: tglMulai, tglSelesai: tglSelesai, alasan: alasan })
+            body: JSON.stringify(payload)
         })
         .then(() => {
-            alert(`Pengajuan ${jenis} Berhasil Dikirim!`);
+            alert(`Pengajuan ${payload.jenis} Berhasil Dikirim!`);
             document.getElementById('tglMulai').value = "";
             document.getElementById('tglSelesai').value = "";
             document.getElementById('alasan').value = "";
+            document.getElementById('fileSuratDokter').value = "";
             btn.disabled = false; btn.innerText = "Kirim Pengajuan";
         }).catch(() => {
-            alert("Gagal mengirim pengajuan.");
+            alert("Gagal mengirim data pengajuan.");
             btn.disabled = false; btn.innerText = "Kirim Pengajuan";
         });
     }
