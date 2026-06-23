@@ -6,7 +6,7 @@
     <title>Absensi Tikpul</title>
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; text-align: center; padding: 20px; background: #f4f6f9; margin: 0; }
-        .container { max-width: 500px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .container { max-width: 550px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .tabs { display: flex; margin-bottom: 20px; border-bottom: 2px solid #ddd; flex-wrap: wrap; }
         .tab-btn { flex: 1; padding: 12px; cursor: pointer; background: none; border: none; font-size: 14px; font-weight: bold; color: #666; min-width: 100px; }
         .tab-btn.active { color: #007bff; border-bottom: 3px solid #007bff; }
@@ -25,11 +25,12 @@
         .form-surat { display: none; text-align: left; background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px dashed #007bff; margin-top: 5px; }
         .form-surat label { font-size: 13px; font-weight: bold; color: #333; }
         
-        /* Style Tambahan untuk Tabel Admin */
+        /* Style Tambahan untuk Tabel & Filter Admin */
         .admin-box { background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin-top: 10px; }
+        .filter-group { display: flex; gap: 8px; margin-bottom: 15px; }
         .table-responsive { width: 100%; overflow-x: auto; margin-top: 15px; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; background: white; }
-        th, td { padding: 10px; border: 1px solid #ddd; text-align: center; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; background: white; }
+        th, td { padding: 8px; border: 1px solid #ddd; text-align: center; }
         th { background-color: #007bff; color: white; }
         tr:nth-child(even) { background-color: #f2f2f2; }
     </style>
@@ -45,7 +46,7 @@
         <button class="tab-btn" style="background: #e9ecef; color: #495057;" onclick="switchTab('tab-admin', this)">Menu Admin 🔒</button>
     </div>
 
-    <!-- Bagian Form Input yang Diisi User (Disembunyikan saat di Tab Admin) -->
+    <!-- Form Input Karyawan -->
     <div id="form-karyawan-inputs">
         <select id="globalNama" required>
             <option value="" disabled selected>-- Pilih Nama Lengkap Anda --</option>
@@ -59,6 +60,13 @@
             <option value="" disabled selected>-- Pilih Departemen / Divisi --</option>
             <option value="Security">Security</option>        
             <option value="Umum/Lainnya">Umum / Lainnya</option>
+        </select>
+
+        <!-- Pilihan Shift (Baru) -->
+        <select id="globalShift" required>
+            <option value="" disabled selected>-- Pilih Shift Kerja Anda --</option>
+            <option value="Shift 1 (Pagi)">Shift 1 (Pagi)</option>        
+            <option value="Shift 2 (Malam)">Shift 2 (Malam)</option>
         </select>
     </div>
 
@@ -92,17 +100,40 @@
         <button id="btnKirimIzin" onclick="prosesPengajuan()">Kirim Pengajuan</button>
     </div>
 
-    <!-- TAB REKAP DATA ADMIN (BARU) -->
+    <!-- TAB REKAP DATA ADMIN -->
     <div id="tab-admin" class="tab-content">
         <div id="adminAuthBox">
             <h4>Halaman Khusus Admin</h4>
             <input type="password" id="passAdmin" placeholder="Masukkan Password Admin">
-            <button onclick="loadDataRekap()">Masuk & Ambil Data</button>
+            <button onclick="loginAdmin()">Konfirmasi Password</button>
         </div>
         
         <div id="adminDataBox" class="admin-box" style="display:none;">
-            <h3>Rekapitulasi Kehadiran</h3>
-            <button onclick="loadDataRekap()" style="background:#6c757d; font-size:12px; padding:6px; width:auto; margin-bottom:10px;">🔄 Refresh Data</button>
+            <h3>Laporan Rekap Bulanan</h3>
+            
+            <div class="filter-group">
+                <select id="filterBulan">
+                    <option value="0">Januari</option>
+                    <option value="1">Februari</option>
+                    <option value="2">Maret</option>
+                    <option value="3">April</option>
+                    <option value="4">Mei</option>
+                    <option value="5">Juni</option>
+                    <option value="6">Juli</option>
+                    <option value="7">Agustus</option>
+                    <option value="8">September</option>
+                    <option value="9">Oktober</option>
+                    <option value="10">November</option>
+                    <option value="11">Desember</option>
+                </select>
+                <select id="filterTahun">
+                    <option value="2026">2026</option>
+                    <option value="2027">2027</option>
+                    <option value="2028">2028</option>
+                </select>
+            </div>
+            <button onclick="loadDataRekap()" style="background:#007bff; margin-top:0;">🔍 Tampilkan Laporan</button>
+            
             <div class="table-responsive">
                 <table>
                     <thead>
@@ -111,13 +142,14 @@
                             <th>Divisi</th>
                             <th style="background:#28a745;">Masuk</th>
                             <th style="background:#dc3545;">Pulang</th>
+                            <th style="background:#e67e22;">Telat ⚠️</th>
                             <th style="background:#ffc107; color:black;">Cuti</th>
                             <th style="background:#17a2b8;">Izin</th>
                             <th style="background:#6f42c1;">Sakit</th>
                         </tr>
                     </thead>
                     <tbody id="tabelRekapBody">
-                        <!-- Data Rekap otomatis masuk di sini via JS -->
+                        <tr><td colspan="8">Silakan pilih bulan lalu klik Tampilkan Laporan.</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -136,6 +168,10 @@
     const statusLokasi = document.getElementById('statusLokasi');
     const btnMasuk = document.getElementById('btnMasuk');
     const btnPulang = document.getElementById('btnPulang');
+
+    const infoWaktuSekerang = new Date();
+    document.getElementById('filterBulan').value = infoWaktuSekerang.getMonth();
+    document.getElementById('filterTahun').value = infoWaktuSekerang.getFullYear();
 
     navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
     .then(stream => { video.srcObject = stream; })
@@ -180,7 +216,6 @@
         document.getElementById(tabId).classList.add('active');
         btn.classList.add('active');
 
-        // Sembunyikan dropdown nama & divisi kalau masuk ke halaman admin supaya bersih
         if(tabId === 'tab-admin') {
             document.getElementById('form-karyawan-inputs').style.display = 'none';
         } else {
@@ -201,9 +236,11 @@
     function prosesAbsen(tipe) {
         const nama = document.getElementById('globalNama').value;
         const depar = document.getElementById('globalDepartemen').value;
+        const shift = document.getElementById('globalShift').value;
 
         if (!nama) return alert("Silakan pilih Nama Anda terlebih dahulu!");
         if (!depar) return alert("Silakan pilih Departemen Anda terlebih dahulu!");
+        if (!shift) return alert("Silakan pilih Shift Kerja Anda terlebih dahulu!");
 
         const btn = tipe === 'Masuk' ? btnMasuk : btnPulang;
         const originalText = btn.innerText;
@@ -216,7 +253,7 @@
         fetch(GAS_URL, {
             method: "POST",
             mode: "no-cors",
-            body: JSON.stringify({ action: "absen", nama: nama, departemen: depar, status: tipe, foto: fotoBase64 })
+            body: JSON.stringify({ action: "absen", nama: nama, departemen: depar, shift: shift, status: tipe, foto: fotoBase64 })
         })
         .then(() => {
             alert(`Absen ${tipe} Berhasil Terkirim!`);
@@ -286,18 +323,23 @@
         });
     }
 
-    // FUNGSI UNTUK MENAMPILKAN REKAP DATA ADMIN (BARU)
-    function loadDataRekap() {
+    function loginAdmin() {
         const password = document.getElementById('passAdmin').value;
         if (!password) return alert("Masukkan password admin terlebih dahulu!");
+        loadDataRekap();
+    }
+
+    function loadDataRekap() {
+        const password = document.getElementById('passAdmin').value;
+        const bulan = document.getElementById('filterBulan').value;
+        const tahun = document.getElementById('filterTahun').value;
 
         const tbody = document.getElementById('tabelRekapBody');
-        tbody.innerHTML = "<tr><td colspan='7'>Sedang memuat dan menghitung rekap data...</td></tr>";
+        tbody.innerHTML = "<tr><td colspan='8'>Sedang memuat data bulan pilihan...</td></tr>";
 
-        // Menggunakan mode 'cors' dengan server-side response teks agar data return-nya bisa terbaca di HTML luar
         fetch(GAS_URL, {
             method: "POST",
-            body: JSON.stringify({ action: "get_rekap", password: password })
+            body: JSON.stringify({ action: "get_rekap", password: password, bulan: bulan, tahun: tahun })
         })
         .then(response => response.json())
         .then(res => {
@@ -307,7 +349,7 @@
                 
                 tbody.innerHTML = "";
                 if (res.data.length === 0) {
-                    tbody.innerHTML = "<tr><td colspan='7'>Belum ada data terekam.</td></tr>";
+                    tbody.innerHTML = "<tr><td colspan='8'>Tidak ada rekaman data pada bulan & tahun ini.</td></tr>";
                     return;
                 }
 
@@ -317,6 +359,7 @@
                         <td>${item.departemen || '-'}</td>
                         <td style="color:#28a745; font-weight:bold;">${item.masuk}</td>
                         <td style="color:#dc3545; font-weight:bold;">${item.pulang}</td>
+                        <td style="color:#e67e22; font-weight:bold; background:#fff5eb;">${item.telat}</td>
                         <td>${item.cuti}</td>
                         <td>${item.izin}</td>
                         <td>${item.sakit}</td>
@@ -325,14 +368,12 @@
                 });
             } else {
                 alert(res.message);
-                tbody.innerHTML = "<tr><td colspan='7'>Gagal memuat data. Password salah.</td></tr>";
+                tbody.innerHTML = "<tr><td colspan='8'>Gagal memuat data. Password salah.</td></tr>";
             }
         })
         .catch(err => {
-            // Jika Web App Google Script belum diset ke akses 'Anyone', fetch JSON langsung sering terhalang CORS. 
-            // Solusi: Pastikan saat deploy ulang web app di GAS, pilih execute sebagai "Me" dan aksesnya "Anyone".
-            alert("Terjadi masalah koneksi atau CORS. Pastikan setelan deploy Web App Anda sudah diatur ke 'Anyone'.");
-            tbody.innerHTML = "<tr><td colspan='7'>Gagal memuat data.</td></tr>";
+            alert("Terjadi masalah koneksi. Pastikan setelan deploy Web App Anda sudah diatur ke 'Anyone'.");
+            tbody.innerHTML = "<tr><td colspan='8'>Gagal memuat data.</td></tr>";
         });
     }
 </script>
