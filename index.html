@@ -54,7 +54,7 @@
     </div>
 
     <div id="form-karyawan-inputs">
-        <select id="globalNama" required>
+        <select id="globalNama" onchange="validasiStatusAbsen()" required>
             <option value="" disabled selected>-- Pilih Nama Lengkap Anda --</option>
             <option value="Budi Santoso">Budi Santoso</option>
             <option value="Siti Aminah">Siti Aminah</option>
@@ -68,7 +68,7 @@
             <option value="Umum/Lainnya">Umum / Lainnya</option>
         </select>
 
-        <select id="globalShift" required>
+        <select id="globalShift" onchange="validasiStatusAbsen()" required>
             <option value="" disabled selected>-- Pilih Shift Kerja Hari Ini --</option>
             <option value="Shift 1 (Pagi)">Shift 1 (Pagi: 08.00)</option>        
             <option value="Shift 2 (Malam)">Shift 2 (Malam: 20.00)</option>
@@ -179,12 +179,16 @@
     const statusLokasi = document.getElementById('statusLokasi');
     const btnMasuk = document.getElementById('btnMasuk'); const btnPulang = document.getElementById('btnPulang');
 
-    // Tempat menyimpan data mentah dari database GAS
     var DATA_MASTER_ABSEN = [];
     var DATA_MASTER_IZIN = [];
     var HALAMAN_ABSEN = 1;
     var HALAMAN_IZIN = 1;
-    const LIMIT_DATA = 100; // Pembatasan maksimal 100 data per halaman
+    const LIMIT_DATA = 100; 
+    
+    // Variabel flags untuk kontrol tombol absen berdasarkan respons server
+    var sudahMasukHariIni = false;
+    var sudahPulangHariIni = false;
+    var lokasiValid = false;
 
     document.getElementById('filterBulan').value = new Date().getMonth();
     document.getElementById('filterTahun').value = new Date().getFullYear();
@@ -201,10 +205,17 @@
 
     function cekLokasiKaryawan(position) {
         const jarak = hitungJarak(position.coords.latitude, position.coords.longitude, KANTOR_LAT, KANTOR_LON);
-        if (jarak <= RADIUS_MAKSIMAL) { statusLokasi.style.display = "none"; btnMasuk.disabled = false; btnPulang.disabled = false; } 
-        else { statusLokasi.style.backgroundColor = "#f8d7da"; statusLokasi.style.color = "#721c24"; statusLokasi.style.display = "block"; statusLokasi.innerText = `Luar area office (${Math.round(jarak)}m)`; btnMasuk.disabled = true; btnPulang.disabled = true; }
+        if (jarak <= RADIUS_MAKSIMAL) { 
+            statusLokasi.style.display = "none"; 
+            lokasiValid = true;
+            aturStatusTombol();
+        } else { 
+            statusLokasi.style.backgroundColor = "#f8d7da"; statusLokasi.style.color = "#721c24"; statusLokasi.style.display = "block"; statusLokasi.innerText = `Luar area office (${Math.round(jarak)}m)`; 
+            lokasiValid = false;
+            btnMasuk.disabled = true; btnPulang.disabled = true; 
+        }
     }
-    function errorGPS() { statusLokasi.style.display = "block"; statusLokasi.innerText = "Gagal kunci GPS."; }
+    function errorGPS() { statusLokasi.style.display = "block"; statusLokasi.innerText = "Gagal kunci GPS."; lokasiValid = false; }
 
     function switchTab(tabId, btn) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -216,15 +227,86 @@
 
     function cekJenisPengajuan() { document.getElementById('boxSuratDokter').style.display = (document.getElementById('jenisPengajuan').value === "Sakit") ? "block" : "none"; }
 
+    // FUNGSI BARU: Cek ke server apakah user sudah absen pada shift yang dipilih hari ini
+    function validasiStatusAbsen() {
+        const nama = document.getElementById('globalNama').value;
+        const shift = document.getElementById('globalShift').value;
+        if (!nama || !shift) return;
+
+        // Tampilkan loading state sementara mengecek ke server
+        statusLokasi.style.display = "block";
+        statusLokasi.style.backgroundColor = "#e2e8f0"; statusLokasi.style.color = "#4a5568";
+        statusLokasi.innerText = "Memvalidasi riwayat shift hari ini...";
+
+        fetch(GAS_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "cek_status_absen", nama: nama, shift: shift })
+        })
+        .then(res => res.json())
+        .then(res => {
+            statusLokasi.style.display = "none";
+            if (res.status === "success") {
+                sudahMasukHariIni = res.sudahMasuk;
+                sudahPulangHariIni = res.sudahPulang;
+                aturStatusTombol();
+            }
+        }).catch(() => {
+            statusLokasi.style.display = "none";
+        });
+    }
+
+    // FUNGSI BARU: Mengatur status tombol aktif/nonaktif digabung dengan validasi GPS
+    function aturStatusTombol() {
+        if (!lokasiValid) return; // Jika GPS di luar area, biarkan tetap ke-disable
+        
+        btnMasuk.disabled = sudahMasukHariIni;
+        btnPulang.disabled = sudahPulangHariIni;
+
+        // Beri feedback text jika sudah melakukan semua absensi di shift ini
+        if (sudahMasukHariIni && sudahPulangHariIni) {
+            statusLokasi.style.display = "block";
+            statusLokasi.style.backgroundColor = "#d4edda"; statusLokasi.style.color = "#155724";
+            statusLokasi.innerText = "Anda sudah menyelesaikan Absen Masuk & Pulang untuk shift ini.";
+        }
+    }
+
+    // MODIFIKASI: Menggunakan FETCH method POST standard (bukan no-cors) agar mendapatkan return response JSON
     function prosesAbsen(tipe) {
         const nama = document.getElementById('globalNama').value; const depar = document.getElementById('globalDepartemen').value; const shift = document.getElementById('globalShift').value;
         if (!nama || !depar || !shift) return alert("Lengkapi data!");
+        
         const btn = tipe === 'Masuk' ? btnMasuk : btnPulang; btn.disabled = true;
         canvas.width = video.videoWidth; canvas.height = video.videoHeight; canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-        fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify({ action: "absen", nama: nama, departemen: depar, status: tipe, shift: shift, foto: canvas.toDataURL('image/jpeg', 0.6) }) })
-        .then(() => { alert(`Absen ${tipe} Berhasil!`); btn.disabled = false; });
+        
+        statusLokasi.style.display = "block";
+        statusLokasi.style.backgroundColor = "#cce5ff"; statusLokasi.style.color = "#004085";
+        statusLokasi.innerText = `Sedang memproses Absen ${tipe}...`;
+
+        fetch(GAS_URL, { 
+            method: "POST", 
+            body: JSON.stringify({ action: "absen", nama: nama, departemen: depar, status: tipe, shift: shift, foto: canvas.toDataURL('image/jpeg', 0.6) }) 
+        })
+        .then(res => res.json())
+        .then((res) => {
+            statusLokasi.style.display = "none";
+            if(res.status === "success") {
+                alert(`Absen ${tipe} Berhasil!`);
+                // Update variable flag lokal langsung tanpa reload page
+                if (tipe === 'Masuk') sudahMasukHariIni = true;
+                if (tipe === 'Pulang') sudahPulangHariIni = true;
+                aturStatusTombol();
+            } else {
+                alert("Gagal: " + res.message);
+                btn.disabled = false;
+            }
+        }).catch(err => {
+            statusLokasi.style.display = "none";
+            alert("Terjadi kesalahan jaringan.");
+            btn.disabled = false;
+        });
     }
 
+    // MODIFIKASI: Menghapus location.reload() agar halaman tidak kembali ke awal
     function prosesPengajuan() {
         const nama = document.getElementById('globalNama').value; const depar = document.getElementById('globalDepartemen').value;
         const jenis = document.getElementById('jenisPengajuan').value; const tglMulai = document.getElementById('tglMulai').value;
@@ -233,15 +315,41 @@
         if (!nama || !depar || !tglMulai || !tglSelesai || !alasan) return alert("Mohon lengkapi seluruh form!");
         
         const payload = { action: "pengajuan", nama: nama, departemen: depar, jenis: jenis, tglMulai: tglMulai, tglSelesai: tglSelesai, alasan: alasan, suratDokter: null };
+        
+        document.getElementById('btnKirimIzin').disabled = true;
+        document.getElementById('btnKirimIzin').innerText = "Mengirim...";
+
         if (jenis === "Sakit" && fileInput.files.length > 0) {
             const reader = new FileReader(); reader.onload = function(e) { payload.suratDokter = e.target.result; kirimIzin(payload); }; reader.readAsDataURL(fileInput.files[0]);
         } else { kirimIzin(payload); }
     }
-    function kirimIzin(p) { fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(p) }).then(() => { alert("Pengajuan Terkirim!"); location.reload(); }); }
+    
+    // MODIFIKASI: Menghapus fungsi reload() bawaan sebelumnya
+    function kirimIzin(p) { 
+        fetch(GAS_URL, { method: "POST", body: JSON.stringify(p) })
+        .then(res => res.json())
+        .then((res) => {
+            document.getElementById('btnKirimIzin').disabled = false;
+            document.getElementById('btnKirimIzin').innerText = "Kirim Pengajuan";
+            if(res.status === "success") {
+                alert("Pengajuan Terkirim Berhasil!");
+                // Reset form input izin saja tanpa merefresh seluruh aplikasi web
+                document.getElementById('tglMulai').value = "";
+                document.getElementById('tglSelesai').value = "";
+                document.getElementById('alasan').value = "";
+                if(document.getElementById('fileSuratDokter')) document.getElementById('fileSuratDokter').value = "";
+            } else {
+                alert("Gagal mengirim: " + res.message);
+            }
+        }).catch(() => {
+            document.getElementById('btnKirimIzin').disabled = false;
+            document.getElementById('btnKirimIzin').innerText = "Kirim Pengajuan";
+            alert("Koneksi bermasalah.");
+        }); 
+    }
 
     function loginAdmin() { if (document.getElementById('passAdmin').value) loadDataRekap(); }
 
-    // FUNGSI UTAMA LOAD DATA DARI DATABASE GOOGLE SHEETS
     function loadDataRekap() {
         const password = document.getElementById('passAdmin').value;
         const bulan = document.getElementById('filterBulan').value;
@@ -258,33 +366,28 @@
                 document.getElementById('adminAuthBox').style.display = 'none';
                 document.getElementById('adminDataBox').style.display = 'block';
                 
-                // 1. Render Tampilan Total Rekap
                 const tBodyRekap = document.getElementById('tabelRekapBody');
                 tBodyRekap.innerHTML = res.rekap.length === 0 ? "<tr><td colspan='8'>Tidak ada data rekap.</td></tr>" : "";
                 res.rekap.forEach(item => {
                     tBodyRekap.innerHTML += `<tr><td><b>${item.nama}</b></td><td>${item.departemen}</td><td style='color:green;'>${item.masuk}</td><td style='color:red;'>${item.pulang}</td><td style='color:orange; font-weight:bold;'>${item.telat}</td><td>${item.cuti}</td><td>${item.izin}</td><td>${item.sakit}</td></tr>`;
                 });
 
-                // Simpan data array detail ke variabel master global untuk di-paginasi oleh sisi browser (client-side pagination)
                 DATA_MASTER_ABSEN = res.logAbsen;
                 DATA_MASTER_IZIN = res.logPengajuan;
                 HALAMAN_ABSEN = 1;
                 HALAMAN_IZIN = 1;
 
-                // Render tabel detail halaman pertama
                 renderTabelDetail('absen');
                 renderTabelDetail('izin');
             } else { alert(res.message); }
         }).catch(() => alert("Koneksi gagal. Cek pengaturan deploy GAS ke 'Anyone'."));
     }
 
-    // LOGIKA PAGINASI RENDER 100 DATA TERBARU
     function renderTabelDetail(tipe) {
         if (tipe === 'absen') {
             const tbody = document.getElementById('tabelLogAbsenBody');
             tbody.innerHTML = DATA_MASTER_ABSEN.length === 0 ? "<tr><td colspan='7'>Tidak ada riwayat absen.</td></tr>" : "";
             
-            // Hitung index batasan potong data
             let start = (HALAMAN_ABSEN - 1) * LIMIT_DATA;
             let end = start + LIMIT_DATA;
             let dataPotong = DATA_MASTER_ABSEN.slice(start, end);
@@ -319,13 +422,12 @@
         }
     }
 
-    // KETIKA TOMBOL NEXT / PREV DIKLIK
     function ubahHalamanDetail(tipe, arah) {
         if (tipe === 'absen') { HALAMAN_ABSEN += arah; renderTabelDetail('absen'); } 
         else if (tipe === 'izin') { HALAMAN_IZIN += arah; renderTabelDetail('izin'); }
     }
 
-    // ATUR PERPINDAHAN SUB-TAB ADMIn
+    document.querySelectorAll('.sub-btn').forEach(b => b.classList.remove('active'));
     function gantiSubTampilan(target) {
         document.querySelectorAll('.sub-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('subViewRekap').style.display = 'none';
