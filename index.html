@@ -37,6 +37,11 @@
         tr:nth-child(even) { background-color: #f2f2f2; }
         .btn-link { padding: 3px 6px; font-size: 11px; background: #17a2b8; width: auto; margin: 0; }
         
+        /* Input Pencarian */
+        .search-box { position: relative; margin-bottom: 15px; }
+        .search-box input { padding-left: 35px; border: 1px solid #007bff; background: #fff; }
+        .search-box::before { content: "🔍"; position: absolute; left: 10px; top: 12px; font-size: 14px; }
+
         /* Paginasi */
         .pagination-box { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; font-size: 12px; }
         .pagination-box button { width: auto; padding: 6px 15px; margin: 0; background: #6c757d; }
@@ -124,6 +129,10 @@
             </div>
             <button onclick="loadDataRekap()" style="background:#007bff; margin-top:0;">🔍 Tarik Semua Data</button>
             
+            <div class="search-box" id="searchContainer" style="display: none; margin-top: 15px;">
+                <input type="text" id="inputCariAdmin" onkeyup="jalankanPencarian()" placeholder="Cari berdasarkan Nama atau Departemen...">
+            </div>
+
             <div class="sub-tabs" style="margin-top: 15px;">
                 <button class="sub-btn active" id="btnSubRekap" onclick="gantiSubTampilan('rekap')">🔢 Total Rekap</button>
                 <button class="sub-btn" id="btnSubAbsen" onclick="gantiSubTampilan('absen')">📑 Riwayat Absen</button>
@@ -179,13 +188,20 @@
     const statusLokasi = document.getElementById('statusLokasi');
     const btnMasuk = document.getElementById('btnMasuk'); const btnPulang = document.getElementById('btnPulang');
 
+    // Data Master Asli dari Server
+    var DATA_MASTER_REKAP = [];
     var DATA_MASTER_ABSEN = [];
     var DATA_MASTER_IZIN = [];
+
+    // Data Hasil Filter Pencarian
+    var DATA_FILTER_REKAP = [];
+    var DATA_FILTER_ABSEN = [];
+    var DATA_FILTER_IZIN = [];
+
     var HALAMAN_ABSEN = 1;
     var HALAMAN_IZIN = 1;
     const LIMIT_DATA = 100; 
     
-    // Variabel flags untuk kontrol tombol absen berdasarkan respons server
     var sudahMasukHariIni = false;
     var sudahPulangHariIni = false;
     var lokasiValid = false;
@@ -227,13 +243,11 @@
 
     function cekJenisPengajuan() { document.getElementById('boxSuratDokter').style.display = (document.getElementById('jenisPengajuan').value === "Sakit") ? "block" : "none"; }
 
-    // FUNGSI BARU: Cek ke server apakah user sudah absen pada shift yang dipilih hari ini
     function validasiStatusAbsen() {
         const nama = document.getElementById('globalNama').value;
         const shift = document.getElementById('globalShift').value;
         if (!nama || !shift) return;
 
-        // Tampilkan loading state sementara mengecek ke server
         statusLokasi.style.display = "block";
         statusLokasi.style.backgroundColor = "#e2e8f0"; statusLokasi.style.color = "#4a5568";
         statusLokasi.innerText = "Memvalidasi riwayat shift hari ini...";
@@ -255,14 +269,11 @@
         });
     }
 
-    // FUNGSI BARU: Mengatur status tombol aktif/nonaktif digabung dengan validasi GPS
     function aturStatusTombol() {
-        if (!lokasiValid) return; // Jika GPS di luar area, biarkan tetap ke-disable
-        
+        if (!lokasiValid) return; 
         btnMasuk.disabled = sudahMasukHariIni;
         btnPulang.disabled = sudahPulangHariIni;
 
-        // Beri feedback text jika sudah melakukan semua absensi di shift ini
         if (sudahMasukHariIni && sudahPulangHariIni) {
             statusLokasi.style.display = "block";
             statusLokasi.style.backgroundColor = "#d4edda"; statusLokasi.style.color = "#155724";
@@ -270,7 +281,6 @@
         }
     }
 
-    // MODIFIKASI: Menggunakan FETCH method POST standard (bukan no-cors) agar mendapatkan return response JSON
     function prosesAbsen(tipe) {
         const nama = document.getElementById('globalNama').value; const depar = document.getElementById('globalDepartemen').value; const shift = document.getElementById('globalShift').value;
         if (!nama || !depar || !shift) return alert("Lengkapi data!");
@@ -291,7 +301,6 @@
             statusLokasi.style.display = "none";
             if(res.status === "success") {
                 alert(`Absen ${tipe} Berhasil!`);
-                // Update variable flag lokal langsung tanpa reload page
                 if (tipe === 'Masuk') sudahMasukHariIni = true;
                 if (tipe === 'Pulang') sudahPulangHariIni = true;
                 aturStatusTombol();
@@ -306,7 +315,6 @@
         });
     }
 
-    // MODIFIKASI: Menghapus location.reload() agar halaman tidak kembali ke awal
     function prosesPengajuan() {
         const nama = document.getElementById('globalNama').value; const depar = document.getElementById('globalDepartemen').value;
         const jenis = document.getElementById('jenisPengajuan').value; const tglMulai = document.getElementById('tglMulai').value;
@@ -324,7 +332,6 @@
         } else { kirimIzin(payload); }
     }
     
-    // MODIFIKASI: Menghapus fungsi reload() bawaan sebelumnya
     function kirimIzin(p) { 
         fetch(GAS_URL, { method: "POST", body: JSON.stringify(p) })
         .then(res => res.json())
@@ -333,7 +340,6 @@
             document.getElementById('btnKirimIzin').innerText = "Kirim Pengajuan";
             if(res.status === "success") {
                 alert("Pengajuan Terkirim Berhasil!");
-                // Reset form input izin saja tanpa merefresh seluruh aplikasi web
                 document.getElementById('tglMulai').value = "";
                 document.getElementById('tglSelesai').value = "";
                 document.getElementById('alasan').value = "";
@@ -365,60 +371,104 @@
             if (res.status === "success") {
                 document.getElementById('adminAuthBox').style.display = 'none';
                 document.getElementById('adminDataBox').style.display = 'block';
+                document.getElementById('searchContainer').style.display = 'block'; // Tampilkan search box setelah login sukses
                 
-                const tBodyRekap = document.getElementById('tabelRekapBody');
-                tBodyRekap.innerHTML = res.rekap.length === 0 ? "<tr><td colspan='8'>Tidak ada data rekap.</td></tr>" : "";
-                res.rekap.forEach(item => {
-                    tBodyRekap.innerHTML += `<tr><td><b>${item.nama}</b></td><td>${item.departemen}</td><td style='color:green;'>${item.masuk}</td><td style='color:red;'>${item.pulang}</td><td style='color:orange; font-weight:bold;'>${item.telat}</td><td>${item.cuti}</td><td>${item.izin}</td><td>${item.sakit}</td></tr>`;
-                });
-
+                // Simpan ke array data master asli
+                DATA_MASTER_REKAP = res.rekap;
                 DATA_MASTER_ABSEN = res.logAbsen;
                 DATA_MASTER_IZIN = res.logPengajuan;
+
+                // Reset nilai awal filter pencarian dengan data master asli
+                DATA_FILTER_REKAP = [...DATA_MASTER_REKAP];
+                DATA_FILTER_ABSEN = [...DATA_MASTER_ABSEN];
+                DATA_FILTER_IZIN = [...DATA_MASTER_IZIN];
+
                 HALAMAN_ABSEN = 1;
                 HALAMAN_IZIN = 1;
 
+                // Render semua tabel
+                renderTabelRekap();
                 renderTabelDetail('absen');
                 renderTabelDetail('izin');
             } else { alert(res.message); }
         }).catch(() => alert("Koneksi gagal. Cek pengaturan deploy GAS ke 'Anyone'."));
     }
 
+    // FUNGSI BARU: Logika penyaringan kata kunci pencarian
+    function jalankanPencarian() {
+        const keyword = document.getElementById('inputCariAdmin').value.toLowerCase().trim();
+
+        // Filter data rekap
+        DATA_FILTER_REKAP = DATA_MASTER_REKAP.filter(item => 
+            item.nama.toLowerCase().includes(keyword) || item.departemen.toLowerCase().includes(keyword)
+        );
+
+        // Filter data detail absen
+        DATA_FILTER_ABSEN = DATA_MASTER_ABSEN.filter(item => 
+            item.nama.toLowerCase().includes(keyword) || item.departemen.toLowerCase().includes(keyword)
+        );
+
+        // Filter data detail izin
+        DATA_FILTER_IZIN = DATA_MASTER_IZIN.filter(item => 
+            item.nama.toLowerCase().includes(keyword) || item.departemen.toLowerCase().includes(keyword)
+        );
+
+        // Setiap kali mencari, set paginasi kembali ke halaman 1
+        HALAMAN_ABSEN = 1;
+        HALAMAN_IZIN = 1;
+
+        // Gambar ulang tabel berdasarkan hasil saringan
+        renderTabelRekap();
+        renderTabelDetail('absen');
+        renderTabelDetail('izin');
+    }
+
+    // Dipisah menjadi fungsi tersendiri agar bisa dipanggil saat pencarian berjalan
+    function renderTabelRekap() {
+        const tBodyRekap = document.getElementById('tabelRekapBody');
+        tBodyRekap.innerHTML = DATA_FILTER_REKAP.length === 0 ? "<tr><td colspan='8'>Data tidak ditemukan.</td></tr>" : "";
+        
+        DATA_FILTER_REKAP.forEach(item => {
+            tBodyRekap.innerHTML += `<tr><td><b>${item.nama}</b></td><td>${item.departemen}</td><td style='color:green;'>${item.masuk}</td><td style='color:red;'>${item.pulang}</td><td style='color:orange; font-weight:bold;'>${item.telat}</td><td>${item.cuti}</td><td>${item.izin}</td><td>${item.sakit}</td></tr>`;
+        });
+    }
+
     function renderTabelDetail(tipe) {
         if (tipe === 'absen') {
             const tbody = document.getElementById('tabelLogAbsenBody');
-            tbody.innerHTML = DATA_MASTER_ABSEN.length === 0 ? "<tr><td colspan='7'>Tidak ada riwayat absen.</td></tr>" : "";
+            tbody.innerHTML = DATA_FILTER_ABSEN.length === 0 ? "<tr><td colspan='7'>Data tidak ditemukan.</td></tr>" : "";
             
             let start = (HALAMAN_ABSEN - 1) * LIMIT_DATA;
             let end = start + LIMIT_DATA;
-            let dataPotong = DATA_MASTER_ABSEN.slice(start, end);
+            let dataPotong = DATA_FILTER_ABSEN.slice(start, end);
 
             dataPotong.forEach(row => {
                 let statusTelat = row.telat === "YA" ? "<span style='color:red; font-weight:bold;'>YA ⚠️</span>" : "TIDAK";
                 tbody.innerHTML += `<tr><td>${row.waktu}</td><td><b>${row.nama}</b></td><td>${row.departemen}</td><td>${row.status}</td><td>${row.shift}</td><td>${statusTelat}</td><td><button class='btn-link' onclick="window.open('${row.foto}','_blank')">👁️ Lihat Foto</button></td></tr>`;
             });
 
-            document.getElementById('pagiAbsenBox').style.display = DATA_MASTER_ABSEN.length > 0 ? 'flex' : 'none';
-            document.getElementById('textAbsenPage').innerText = `Halaman ${HALAMAN_ABSEN} dari ${Math.ceil(DATA_MASTER_ABSEN.length / LIMIT_DATA) || 1}`;
+            document.getElementById('pagiAbsenBox').style.display = DATA_FILTER_ABSEN.length > 0 ? 'flex' : 'none';
+            document.getElementById('textAbsenPage').innerText = `Halaman ${HALAMAN_ABSEN} dari ${Math.ceil(DATA_FILTER_ABSEN.length / LIMIT_DATA) || 1}`;
             document.getElementById('btnAbsenPrev').disabled = (HALAMAN_ABSEN === 1);
-            document.getElementById('btnAbsenNext').disabled = (end >= DATA_MASTER_ABSEN.length);
+            document.getElementById('btnAbsenNext').disabled = (end >= DATA_FILTER_ABSEN.length);
 
         } else if (tipe === 'izin') {
             const tbody = document.getElementById('tabelLogIzinBody');
-            tbody.innerHTML = DATA_MASTER_IZIN.length === 0 ? "<tr><td colspan='7'>Tidak ada riwayat pengajuan.</td></tr>" : "";
+            tbody.innerHTML = DATA_FILTER_IZIN.length === 0 ? "<tr><td colspan='7'>Data tidak ditemukan.</td></tr>" : "";
 
             let start = (HALAMAN_IZIN - 1) * LIMIT_DATA;
             let end = start + LIMIT_DATA;
-            let dataPotong = DATA_MASTER_IZIN.slice(start, end);
+            let dataPotong = DATA_FILTER_IZIN.slice(start, end);
 
             dataPotong.forEach(row => {
                 let tombolSurat = row.surat !== "-" ? `<button class='btn-link' onclick="window.open('${row.surat}','_blank')">📄 Lihat Bukti</button>` : "-";
                 tbody.innerHTML += `<tr><td>${row.waktuSubmit}</td><td><b>${row.nama}</b></td><td>${row.departemen}</td><td><b>${row.jenis}</b></td><td>${row.alasan}</td><td>${row.periode}</td><td>${tombolSurat}</td></tr>`;
             });
 
-            document.getElementById('pagiIzinBox').style.display = DATA_MASTER_IZIN.length > 0 ? 'flex' : 'none';
-            document.getElementById('textIzinPage').innerText = `Halaman ${HALAMAN_IZIN} dari ${Math.ceil(DATA_MASTER_IZIN.length / LIMIT_DATA) || 1}`;
+            document.getElementById('pagiIzinBox').style.display = DATA_FILTER_IZIN.length > 0 ? 'flex' : 'none';
+            document.getElementById('textIzinPage').innerText = `Halaman ${HALAMAN_IZIN} dari ${Math.ceil(DATA_FILTER_IZIN.length / LIMIT_DATA) || 1}`;
             document.getElementById('btnIzinPrev').disabled = (HALAMAN_IZIN === 1);
-            document.getElementById('btnIzinNext').disabled = (end >= DATA_MASTER_IZIN.length);
+            document.getElementById('btnIzinNext').disabled = (end >= DATA_FILTER_IZIN.length);
         }
     }
 
@@ -427,7 +477,6 @@
         else if (tipe === 'izin') { HALAMAN_IZIN += arah; renderTabelDetail('izin'); }
     }
 
-    document.querySelectorAll('.sub-btn').forEach(b => b.classList.remove('active'));
     function gantiSubTampilan(target) {
         document.querySelectorAll('.sub-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('subViewRekap').style.display = 'none';
