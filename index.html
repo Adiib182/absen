@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Absensi Kantor Berbasis GPS & Kamera</title>
+    <title>Absensi Tikpul</title>
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; text-align: center; padding: 20px; background: #f4f6f9; margin: 0; }
         .container { max-width: 450px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
@@ -40,12 +40,7 @@
     
     <select id="globalDepartemen" required>
         <option value="" disabled selected>-- Pilih Departemen / Divisi --</option>
-        <option value="IT & Support">IT & Support</option>
-        <option value="HRD & GA">HRD & GA</option>
-        <option value="Finance & Accounting">Finance & Accounting</option>
-        <option value="Collections">Collections</option>
-        <option value="Marketing & Sales">Marketing & Sales</option>
-        <option value="Operasional">Operasional</option>
+        <option value="Security">Security</option>        
         <option value="Umum/Lainnya">Umum / Lainnya</option>
     </select>
 
@@ -83,8 +78,8 @@
     // KONFIGURASI UTAMA SISTEM (UBAH SESUAI KANTOR KAMU)
     // ========================================================
     const GAS_URL = "https://script.google.com/macros/s/AKfycbzJhc8EUhV82Sdv-Ys8VWiMLpXazdmyOlqWQCYG54fy3lMjejyRNNPrUmctIiYqnDG-Og/exec"; 
-    const KANTOR_LAT = -6.188929023860202;  // <--- Isi Lintang (Latitude) Kantor
-    const KANTOR_LON = 106.87366297933345; // <--- Isi Bujur (Longitude) Kantor
+    const KANTOR_LAT = -6.427759;  // <--- Isi Lintang (Latitude) Kantor
+    const KANTOR_LON = 106.760683; // <--- Isi Bujur (Longitude) Kantor
     const RADIUS_MAKSIMAL = 50;   // <--- Toleransi Jarak Absen Maksimal (Meter)
 
     const video = document.getElementById('video');
