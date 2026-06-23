@@ -6,7 +6,7 @@
     <title>Absensi Tikpul</title>
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; text-align: center; padding: 20px; background: #f4f6f9; margin: 0; }
-        .container { max-width: 550px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .container { max-width: 650px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .tabs { display: flex; margin-bottom: 20px; border-bottom: 2px solid #ddd; flex-wrap: wrap; }
         .tab-btn { flex: 1; padding: 12px; cursor: pointer; background: none; border: none; font-size: 14px; font-weight: bold; color: #666; min-width: 100px; }
         .tab-btn.active { color: #007bff; border-bottom: 3px solid #007bff; }
@@ -23,52 +23,58 @@
         .btn-pulang { background: #dc3545; }
         .status-lokasi { background: #fff3cd; color: #856404; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 14px; font-weight: bold; display: none; }
         .form-surat { display: none; text-align: left; background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px dashed #007bff; margin-top: 5px; }
-        .form-surat label { font-size: 13px; font-weight: bold; color: #333; }
         
-        /* Style Tambahan untuk Tabel & Filter Admin */
+        /* Style Sub-Tab & Tabel Admin */
         .admin-box { background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin-top: 10px; }
         .filter-group { display: flex; gap: 8px; margin-bottom: 15px; }
-        .table-responsive { width: 100%; overflow-x: auto; margin-top: 15px; }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; background: white; }
-        th, td { padding: 8px; border: 1px solid #ddd; text-align: center; }
+        .sub-tabs { display: flex; gap: 5px; margin-bottom: 12px; }
+        .sub-btn { background: #e2e8f0; color: #4a5568; padding: 6px 12px; font-size: 12px; border-radius: 4px; border: none; font-weight: bold; width: auto; cursor: pointer; }
+        .sub-btn.active { background: #4a5568; color: white; }
+        .table-responsive { width: 100%; overflow-x: auto; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; font-size: 11px; text-align: left; background: white; }
+        th, td { padding: 8px; border: 1px solid #ddd; text-align: center; white-space: nowrap; }
         th { background-color: #007bff; color: white; }
         tr:nth-child(even) { background-color: #f2f2f2; }
+        .btn-link { padding: 3px 6px; font-size: 11px; background: #17a2b8; width: auto; margin: 0; }
+        
+        /* Paginasi */
+        .pagination-box { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; font-size: 12px; }
+        .pagination-box button { width: auto; padding: 6px 15px; margin: 0; background: #6c757d; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Absen Dulu Donk Yang Kerja</h2>
+    <h2>Absen Dulu</h2>
     
     <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('tab-absen', this)">Mesin Absen</button>
-        <button class="tab-btn" onclick="switchTab('tab-izin', this)">Kalo Mau Izin</button>
-        <button class="tab-btn" style="background: #e9ecef; color: #495057;" onclick="switchTab('tab-admin', this)">Hanya Admin 🔒</button>
+        <button class="tab-btn active" onclick="switchTab('tab-absen', this)">Main Absen</button>
+        <button class="tab-btn" onclick="switchTab('tab-izin', this)">Cuti / Izin</button>
+        <button class="tab-btn" style="background: #e9ecef; color: #495057;" onclick="switchTab('tab-admin', this)">Menu Admin 🔒</button>
     </div>
 
-    <!-- Form Input Karyawan -->
     <div id="form-karyawan-inputs">
         <select id="globalNama" required>
-            <option value="" disabled selected>-- Pilih Nama Dulu --</option>
-            <option value="Jangkung">Jangkung</option>
-            <option value="Hendra">Hendra</option>            
+            <option value="" disabled selected>-- Pilih Nama Lengkap Anda --</option>
+            <option value="Budi Santoso">Budi Santoso</option>
+            <option value="Siti Aminah">Siti Aminah</option>
+            <option value="Andi Wijaya">Andi Wijaya</option>
+            <option value="Hetty Lumban">Hetty Lumban</option>
         </select>
         
         <select id="globalDepartemen" required>
-            <option value="" disabled selected>-- Pilih Kerjaan --</option>
+            <option value="" disabled selected>-- Pilih Departemen / Divisi --</option>
             <option value="Security">Security</option>        
             <option value="Umum/Lainnya">Umum / Lainnya</option>
         </select>
 
-        <!-- Pilihan Shift (Baru) -->
         <select id="globalShift" required>
-            <option value="" disabled selected>-- Pilih Shift Kerja Anda --</option>
-            <option value="Shift 1 (Pagi)">Shift 1 (Pagi)</option>        
-            <option value="Shift 2 (Malam)">Shift 2 (Malam)</option>
+            <option value="" disabled selected>-- Pilih Shift Kerja Hari Ini --</option>
+            <option value="Shift 1 (Pagi)">Shift 1 (Pagi: 08.00)</option>        
+            <option value="Shift 2 (Malam)">Shift 2 (Malam: 20.00)</option>
         </select>
     </div>
 
-    <!-- TAB MAIN ABSEN -->
     <div id="tab-absen" class="tab-content active">
         <div id="statusLokasi" class="status-lokasi">Memeriksa lokasi GPS Anda...</div>
         <video id="video" autoplay playsinline></video>
@@ -79,26 +85,22 @@
         </div>
     </div>
 
-    <!-- TAB CUTI / IZIN -->
     <div id="tab-izin" class="tab-content">
         <select id="jenisPengajuan" onchange="cekJenisPengajuan()">
-            <option value="Cuti">Cuti ah</option>
-            <option value="Izin">Izin Ada Perlu</option>
-            <option value="Sakit">Sakit Beneran</option>
+            <option value="Cuti">Cuti Tahunan</option>
+            <option value="Izin">Izin Keperluan</option>
+            <option value="Sakit">Sakit (Butuh Surat Dokter)</option>
         </select>
-        
         <div id="boxSuratDokter" class="form-surat">
             <label>Foto / Upload Surat Keterangan Dokter:</label>
             <input type="file" id="fileSuratDokter" accept="image/*" capture="environment">
         </div>
-
         <input type="date" id="tglMulai">
         <input type="date" id="tglSelesai">
         <textarea id="alasan" rows="3" placeholder="Alasan pengajuan secara detail..."></textarea>
         <button id="btnKirimIzin" onclick="prosesPengajuan()">Kirim Pengajuan</button>
     </div>
 
-    <!-- TAB REKAP DATA ADMIN -->
     <div id="tab-admin" class="tab-content">
         <div id="adminAuthBox">
             <h4>Halaman Khusus Admin</h4>
@@ -107,85 +109,91 @@
         </div>
         
         <div id="adminDataBox" class="admin-box" style="display:none;">
-            <h3>Laporan Rekap Bulanan</h3>
+            <h3>Laporan & Riwayat Bulanan</h3>
             
             <div class="filter-group">
                 <select id="filterBulan">
-                    <option value="0">Januari</option>
-                    <option value="1">Februari</option>
-                    <option value="2">Maret</option>
-                    <option value="3">April</option>
-                    <option value="4">Mei</option>
-                    <option value="5">Juni</option>
-                    <option value="6">Juli</option>
-                    <option value="7">Agustus</option>
-                    <option value="8">September</option>
-                    <option value="9">Oktober</option>
-                    <option value="10">November</option>
-                    <option value="11">Desember</option>
+                    <option value="0">Januari</option><option value="1">Februari</option><option value="2">Maret</option>
+                    <option value="3">April</option><option value="4">Mei</option><option value="5">Juni</option>
+                    <option value="6">Juli</option><option value="7">Agustus</option><option value="8">September</option>
+                    <option value="9">Oktober</option><option value="10">November</option><option value="11">Desember</option>
                 </select>
                 <select id="filterTahun">
-                    <option value="2026">2026</option>
-                    <option value="2027">2027</option>
-                    <option value="2028">2028</option>
+                    <option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option>
                 </select>
             </div>
-            <button onclick="loadDataRekap()" style="background:#007bff; margin-top:0;">🔍 Tampilkan Laporan</button>
+            <button onclick="loadDataRekap()" style="background:#007bff; margin-top:0;">🔍 Tarik Semua Data</button>
             
-            <div class="table-responsive">
+            <div class="sub-tabs" style="margin-top: 15px;">
+                <button class="sub-btn active" id="btnSubRekap" onclick="gantiSubTampilan('rekap')">🔢 Total Rekap</button>
+                <button class="sub-btn" id="btnSubAbsen" onclick="gantiSubTampilan('absen')">📑 Riwayat Absen</button>
+                <button class="sub-btn" id="btnSubIzin" onclick="gantiSubTampilan('izin')">✉️ Riwayat Pengajuan</button>
+            </div>
+
+            <div id="subViewRekap" class="table-responsive">
                 <table>
                     <thead>
-                        <tr>
-                            <th>Nama</th>
-                            <th>Kerjaan</th>
-                            <th style="background:#28a745;">Masuk</th>
-                            <th style="background:#dc3545;">Pulang</th>
-                            <th style="background:#e67e22;">Telat ⚠️</th>
-                            <th style="background:#ffc107; color:black;">Cuti</th>
-                            <th style="background:#17a2b8;">Izin</th>
-                            <th style="background:#6f42c1;">Sakit</th>
-                        </tr>
+                        <tr><th>Nama</th><th>Divisi</th><th>Masuk</th><th>Pulang</th><th style="background:#e67e22;">Telat</th><th>Cuti</th><th>Izin</th><th>Sakit</th></tr>
                     </thead>
-                    <tbody id="tabelRekapBody">
-                        <tr><td colspan="8">Silakan pilih bulan lalu klik Tampilkan Laporan.</td></tr>
-                    </tbody>
+                    <tbody id="tabelRekapBody"><tr><td colspan="8">Belum ada data.</td></tr></tbody>
                 </table>
             </div>
+
+            <div id="subViewAbsen" class="table-responsive" style="display:none;">
+                <table>
+                    <thead>
+                        <tr><th>Waktu Log</th><th>Nama</th><th>Divisi</th><th>Status</th><th>Shift</th><th>Telat?</th><th>Bukti Foto</th></tr>
+                    </thead>
+                    <tbody id="tabelLogAbsenBody"><tr><td colspan="7">Belum ada data.</td></tr></tbody>
+                </table>
+                <div class="pagination-box" id="pagiAbsenBox" style="display:none;">
+                    <button id="btnAbsenPrev" onclick="ubahHalamanDetail('absen', -1)">⬅️ Prev</button>
+                    <span id="textAbsenPage">Halaman 1</span>
+                    <button id="btnAbsenNext" onclick="ubahHalamanDetail('absen', 1)">Next ➡️</button>
+                </div>
+            </div>
+
+            <div id="subViewIzin" class="table-responsive" style="display:none;">
+                <table>
+                    <thead>
+                        <tr><th>Waktu Submit</th><th>Nama</th><th>Divisi</th><th>Jenis</th><th>Alasan</th><th>Periode</th><th>Surat Dokter</th></tr>
+                    </thead>
+                    <tbody id="tabelLogIzinBody"><tr><td colspan="7">Belum ada data.</td></tr></tbody>
+                </table>
+                <div class="pagination-box" id="pagiIzinBox" style="display:none;">
+                    <button id="btnIzinPrev" onclick="ubahHalamanDetail('izin', -1)">⬅️ Prev</button>
+                    <span id="textIzinPage">Halaman 1</span>
+                    <button id="btnIzinNext" onclick="ubahHalamanDetail('izin', 1)">Next ➡️</button>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
 
 <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycbzJhc8EUhV82Sdv-Ys8VWiMLpXazdmyOlqWQCYG54fy3lMjejyRNNPrUmctIiYqnDG-Og/exec"; 
-    const KANTOR_LAT = -6.427759;  
-    const KANTOR_LON = 106.760683; 
-    const RADIUS_MAKSIMAL = 50;   
+    const KANTOR_LAT = -6.427759; const KANTOR_LON = 106.760683; const RADIUS_MAKSIMAL = 50;   
 
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
+    const video = document.getElementById('video'); const canvas = document.getElementById('canvas');
     const statusLokasi = document.getElementById('statusLokasi');
-    const btnMasuk = document.getElementById('btnMasuk');
-    const btnPulang = document.getElementById('btnPulang');
+    const btnMasuk = document.getElementById('btnMasuk'); const btnPulang = document.getElementById('btnPulang');
 
-    const infoWaktuSekerang = new Date();
-    document.getElementById('filterBulan').value = infoWaktuSekerang.getMonth();
-    document.getElementById('filterTahun').value = infoWaktuSekerang.getFullYear();
+    // Tempat menyimpan data mentah dari database GAS
+    var DATA_MASTER_ABSEN = [];
+    var DATA_MASTER_IZIN = [];
+    var HALAMAN_ABSEN = 1;
+    var HALAMAN_IZIN = 1;
+    const LIMIT_DATA = 100; // Pembatasan maksimal 100 data per halaman
 
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
-    .then(stream => { video.srcObject = stream; })
-    .catch(err => alert("Browser memblokir perizinan kamera. Harap aktifkan!"));
+    document.getElementById('filterBulan').value = new Date().getMonth();
+    document.getElementById('filterTahun').value = new Date().getFullYear();
 
-    if (navigator.geolocation) {
-        statusLokasi.style.display = "block";
-        navigator.geolocation.watchPosition(cekLokasiKaryawan, errorGPS, {
-            enableHighAccuracy: true,
-            timeout: 10000
-        });
-    }
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }).then(stream => { video.srcObject = stream; }).catch(err => alert("Kamera diblokir!"));
+    if (navigator.geolocation) { navigator.geolocation.watchPosition(cekLokasiKaryawan, errorGPS, { enableHighAccuracy: true, timeout: 10000 }); }
 
     function hitungJarak(lat1, lon1, lat2, lon2) {
-        const R = 6371e3; 
-        const phi1 = lat1 * Math.PI/180; const phi2 = lat2 * Math.PI/180;
+        const R = 6371e3; const phi1 = lat1 * Math.PI/180; const phi2 = lat2 * Math.PI/180;
         const deltaPhi = (lat2-lat1) * Math.PI/180; const deltaLambda = (lon2-lon1) * Math.PI/180;
         const a = Math.sin(deltaPhi/2) * Math.sin(deltaPhi/2) + Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda/2) * Math.sin(deltaLambda/2);
         return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))); 
@@ -193,186 +201,140 @@
 
     function cekLokasiKaryawan(position) {
         const jarak = hitungJarak(position.coords.latitude, position.coords.longitude, KANTOR_LAT, KANTOR_LON);
-        if (jarak <= RADIUS_MAKSIMAL) {
-            statusLokasi.style.display = "none";
-            btnMasuk.disabled = false; btnPulang.disabled = false;
-        } else {
-            statusLokasi.style.backgroundColor = "#f8d7da"; statusLokasi.style.color = "#721c24"; statusLokasi.style.display = "block";
-            statusLokasi.innerText = `Anda di luar area kantor (${Math.round(jarak)} m). Maksimal radius: ${RADIUS_MAKSIMAL} m.`;
-            btnMasuk.disabled = true; btnPulang.disabled = true;
-        }
+        if (jarak <= RADIUS_MAKSIMAL) { statusLokasi.style.display = "none"; btnMasuk.disabled = false; btnPulang.disabled = false; } 
+        else { statusLokasi.style.backgroundColor = "#f8d7da"; statusLokasi.style.color = "#721c24"; statusLokasi.style.display = "block"; statusLokasi.innerText = `Luar area office (${Math.round(jarak)}m)`; btnMasuk.disabled = true; btnPulang.disabled = true; }
     }
-
-    function errorGPS() {
-        statusLokasi.style.display = "block";
-        statusLokasi.innerText = "Gagal mengunci GPS. Pastikan fitur Lokasi HP aktif dan izin browser diberikan.";
-    }
+    function errorGPS() { statusLokasi.style.display = "block"; statusLokasi.innerText = "Gagal kunci GPS."; }
 
     function switchTab(tabId, btn) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-        document.getElementById(tabId).classList.add('active');
-        btn.classList.add('active');
-
-        if(tabId === 'tab-admin') {
-            document.getElementById('form-karyawan-inputs').style.display = 'none';
-        } else {
-            document.getElementById('form-karyawan-inputs').style.display = 'block';
-        }
+        document.getElementById(tabId).classList.add('active'); btn.classList.add('active');
+        if(tabId === 'tab-admin') { document.getElementById('form-karyawan-inputs').style.display = 'none'; } 
+        else { document.getElementById('form-karyawan-inputs').style.display = 'block'; document.getElementById('globalShift').style.display = (tabId === 'tab-izin') ? 'none' : 'block'; }
     }
 
-    function cekJenisPengajuan() {
-        const jenis = document.getElementById('jenisPengajuan').value;
-        const boxSurat = document.getElementById('boxSuratDokter');
-        if (jenis === "Sakit") {
-            boxSurat.style.display = "block";
-        } else {
-            boxSurat.style.display = "none";
-        }
-    }
+    function cekJenisPengajuan() { document.getElementById('boxSuratDokter').style.display = (document.getElementById('jenisPengajuan').value === "Sakit") ? "block" : "none"; }
 
     function prosesAbsen(tipe) {
-        const nama = document.getElementById('globalNama').value;
-        const depar = document.getElementById('globalDepartemen').value;
-        const shift = document.getElementById('globalShift').value;
-
-        if (!nama) return alert("Silakan pilih Nama Anda terlebih dahulu!");
-        if (!depar) return alert("Silakan pilih Departemen Anda terlebih dahulu!");
-        if (!shift) return alert("Silakan pilih Shift Kerja Anda terlebih dahulu!");
-
-        const btn = tipe === 'Masuk' ? btnMasuk : btnPulang;
-        const originalText = btn.innerText;
-        btn.disabled = true; btn.innerText = "Processing...";
-
-        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-        canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-        const fotoBase64 = canvas.toDataURL('image/jpeg', 0.6);
-
-        fetch(GAS_URL, {
-            method: "POST",
-            mode: "no-cors",
-            body: JSON.stringify({ action: "absen", nama: nama, departemen: depar, shift: shift, status: tipe, foto: fotoBase64 })
-        })
-        .then(() => {
-            alert(`Absen ${tipe} Berhasil Terkirim!`);
-            btn.disabled = false; btn.innerText = originalText;
-        }).catch(() => {
-            alert("Gagal terhubung ke server database.");
-            btn.disabled = false; btn.innerText = originalText;
-        });
+        const nama = document.getElementById('globalNama').value; const depar = document.getElementById('globalDepartemen').value; const shift = document.getElementById('globalShift').value;
+        if (!nama || !depar || !shift) return alert("Lengkapi data!");
+        const btn = tipe === 'Masuk' ? btnMasuk : btnPulang; btn.disabled = true;
+        canvas.width = video.videoWidth; canvas.height = video.videoHeight; canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+        fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify({ action: "absen", nama: nama, departemen: depar, status: tipe, shift: shift, foto: canvas.toDataURL('image/jpeg', 0.6) }) })
+        .then(() => { alert(`Absen ${tipe} Berhasil!`); btn.disabled = false; });
     }
 
     function prosesPengajuan() {
-        const nama = document.getElementById('globalNama').value;
-        const depar = document.getElementById('globalDepartemen').value;
-        const jenis = document.getElementById('jenisPengajuan').value;
-        const tglMulai = document.getElementById('tglMulai').value;
-        const tglSelesai = document.getElementById('tglSelesai').value;
-        const alasan = document.getElementById('alasan').value.trim();
+        const nama = document.getElementById('globalNama').value; const depar = document.getElementById('globalDepartemen').value;
+        const jenis = document.getElementById('jenisPengajuan').value; const tglMulai = document.getElementById('tglMulai').value;
+        const tglSelesai = document.getElementById('tglSelesai').value; const alasan = document.getElementById('alasan').value.trim();
         const fileInput = document.getElementById('fileSuratDokter');
-
-        if (!nama) return alert("Silakan pilih Nama Anda terlebih dahulu!");
-        if (!depar) return alert("Silakan pilih Departemen Anda terlebih dahulu!");
-        if (!tglMulai || !tglSelesai || !alasan) return alert("Mohon lengkapi seluruh form pengajuan!");
-        if (jenis === "Sakit" && fileInput.files.length === 0) return alert("Wajib melampirkan foto / bukti Surat Dokter!");
-
-        const btn = document.getElementById('btnKirimIzin');
-        btn.disabled = true; btn.innerText = "Mengirim...";
-
-        const dataPayload = {
-            action: "pengajuan",
-            nama: nama,
-            departemen: depar,
-            jenis: jenis,
-            tglMulai: tglMulai,
-            tglSelesai: tglSelesai,
-            alasan: alasan,
-            suratDokter: null
-        };
-
+        if (!nama || !depar || !tglMulai || !tglSelesai || !alasan) return alert("Mohon lengkapi seluruh form!");
+        
+        const payload = { action: "pengajuan", nama: nama, departemen: depar, jenis: jenis, tglMulai: tglMulai, tglSelesai: tglSelesai, alasan: alasan, suratDokter: null };
         if (jenis === "Sakit" && fileInput.files.length > 0) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                dataPayload.suratDokter = e.target.result;
-                kirimDataKeGAS(dataPayload, btn);
-            };
-            reader.readAsDataURL(fileInput.files[0]);
-        } else {
-            kirimDataKeGAS(dataPayload, btn);
-        }
+            const reader = new FileReader(); reader.onload = function(e) { payload.suratDokter = e.target.result; kirimIzin(payload); }; reader.readAsDataURL(fileInput.files[0]);
+        } else { kirimIzin(payload); }
     }
+    function kirimIzin(p) { fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(p) }).then(() => { alert("Pengajuan Terkirim!"); location.reload(); }); }
 
-    function kirimDataKeGAS(payload, btn) {
-        fetch(GAS_URL, {
-            method: "POST",
-            mode: "no-cors",
-            body: JSON.stringify(payload)
-        })
-        .then(() => {
-            alert(`Pengajuan ${payload.jenis} Berhasil Dikirim!`);
-            document.getElementById('tglMulai').value = "";
-            document.getElementById('tglSelesai').value = "";
-            document.getElementById('alasan').value = "";
-            document.getElementById('fileSuratDokter').value = "";
-            btn.disabled = false; btn.innerText = "Kirim Pengajuan";
-        }).catch(() => {
-            alert("Gagal mengirim data pengajuan.");
-            btn.disabled = false; btn.innerText = "Kirim Pengajuan";
-        });
-    }
+    function loginAdmin() { if (document.getElementById('passAdmin').value) loadDataRekap(); }
 
-    function loginAdmin() {
-        const password = document.getElementById('passAdmin').value;
-        if (!password) return alert("Masukkan password admin terlebih dahulu!");
-        loadDataRekap();
-    }
-
+    // FUNGSI UTAMA LOAD DATA DARI DATABASE GOOGLE SHEETS
     function loadDataRekap() {
         const password = document.getElementById('passAdmin').value;
         const bulan = document.getElementById('filterBulan').value;
         const tahun = document.getElementById('filterTahun').value;
 
-        const tbody = document.getElementById('tabelRekapBody');
-        tbody.innerHTML = "<tr><td colspan='8'>Sedang memuat data bulan pilihan...</td></tr>";
+        document.getElementById('tabelRekapBody').innerHTML = "<tr><td colspan='8'>Memuat data...</td></tr>";
+        document.getElementById('tabelLogAbsenBody').innerHTML = "<tr><td colspan='7'>Memuat data...</td></tr>";
+        document.getElementById('tabelLogIzinBody').innerHTML = "<tr><td colspan='7'>Memuat data...</td></tr>";
 
-        fetch(GAS_URL, {
-            method: "POST",
-            body: JSON.stringify({ action: "get_rekap", password: password, bulan: bulan, tahun: tahun })
-        })
+        fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "get_rekap", password: password, bulan: bulan, tahun: tahun }) })
         .then(response => response.json())
         .then(res => {
             if (res.status === "success") {
                 document.getElementById('adminAuthBox').style.display = 'none';
                 document.getElementById('adminDataBox').style.display = 'block';
                 
-                tbody.innerHTML = "";
-                if (res.data.length === 0) {
-                    tbody.innerHTML = "<tr><td colspan='8'>Tidak ada rekaman data pada bulan & tahun ini.</td></tr>";
-                    return;
-                }
-
-                res.data.forEach(item => {
-                    let rupaBaris = `<tr>
-                        <td><b>${item.nama}</b></td>
-                        <td>${item.departemen || '-'}</td>
-                        <td style="color:#28a745; font-weight:bold;">${item.masuk}</td>
-                        <td style="color:#dc3545; font-weight:bold;">${item.pulang}</td>
-                        <td style="color:#e67e22; font-weight:bold; background:#fff5eb;">${item.telat}</td>
-                        <td>${item.cuti}</td>
-                        <td>${item.izin}</td>
-                        <td>${item.sakit}</td>
-                    </tr>`;
-                    tbody.innerHTML += rupaBaris;
+                // 1. Render Tampilan Total Rekap
+                const tBodyRekap = document.getElementById('tabelRekapBody');
+                tBodyRekap.innerHTML = res.rekap.length === 0 ? "<tr><td colspan='8'>Tidak ada data rekap.</td></tr>" : "";
+                res.rekap.forEach(item => {
+                    tBodyRekap.innerHTML += `<tr><td><b>${item.nama}</b></td><td>${item.departemen}</td><td style='color:green;'>${item.masuk}</td><td style='color:red;'>${item.pulang}</td><td style='color:orange; font-weight:bold;'>${item.telat}</td><td>${item.cuti}</td><td>${item.izin}</td><td>${item.sakit}</td></tr>`;
                 });
-            } else {
-                alert(res.message);
-                tbody.innerHTML = "<tr><td colspan='8'>Gagal memuat data. Password salah.</td></tr>";
-            }
-        })
-        .catch(err => {
-            alert("Terjadi masalah koneksi. Pastikan setelan deploy Web App Anda sudah diatur ke 'Anyone'.");
-            tbody.innerHTML = "<tr><td colspan='8'>Gagal memuat data.</td></tr>";
-        });
+
+                // Simpan data array detail ke variabel master global untuk di-paginasi oleh sisi browser (client-side pagination)
+                DATA_MASTER_ABSEN = res.logAbsen;
+                DATA_MASTER_IZIN = res.logPengajuan;
+                HALAMAN_ABSEN = 1;
+                HALAMAN_IZIN = 1;
+
+                // Render tabel detail halaman pertama
+                renderTabelDetail('absen');
+                renderTabelDetail('izin');
+            } else { alert(res.message); }
+        }).catch(() => alert("Koneksi gagal. Cek pengaturan deploy GAS ke 'Anyone'."));
+    }
+
+    // LOGIKA PAGINASI RENDER 100 DATA TERBARU
+    function renderTabelDetail(tipe) {
+        if (tipe === 'absen') {
+            const tbody = document.getElementById('tabelLogAbsenBody');
+            tbody.innerHTML = DATA_MASTER_ABSEN.length === 0 ? "<tr><td colspan='7'>Tidak ada riwayat absen.</td></tr>" : "";
+            
+            // Hitung index batasan potong data
+            let start = (HALAMAN_ABSEN - 1) * LIMIT_DATA;
+            let end = start + LIMIT_DATA;
+            let dataPotong = DATA_MASTER_ABSEN.slice(start, end);
+
+            dataPotong.forEach(row => {
+                let statusTelat = row.telat === "YA" ? "<span style='color:red; font-weight:bold;'>YA ⚠️</span>" : "TIDAK";
+                tbody.innerHTML += `<tr><td>${row.waktu}</td><td><b>${row.nama}</b></td><td>${row.departemen}</td><td>${row.status}</td><td>${row.shift}</td><td>${statusTelat}</td><td><button class='btn-link' onclick="window.open('${row.foto}','_blank')">👁️ Lihat Foto</button></td></tr>`;
+            });
+
+            document.getElementById('pagiAbsenBox').style.display = DATA_MASTER_ABSEN.length > 0 ? 'flex' : 'none';
+            document.getElementById('textAbsenPage').innerText = `Halaman ${HALAMAN_ABSEN} dari ${Math.ceil(DATA_MASTER_ABSEN.length / LIMIT_DATA) || 1}`;
+            document.getElementById('btnAbsenPrev').disabled = (HALAMAN_ABSEN === 1);
+            document.getElementById('btnAbsenNext').disabled = (end >= DATA_MASTER_ABSEN.length);
+
+        } else if (tipe === 'izin') {
+            const tbody = document.getElementById('tabelLogIzinBody');
+            tbody.innerHTML = DATA_MASTER_IZIN.length === 0 ? "<tr><td colspan='7'>Tidak ada riwayat pengajuan.</td></tr>" : "";
+
+            let start = (HALAMAN_IZIN - 1) * LIMIT_DATA;
+            let end = start + LIMIT_DATA;
+            let dataPotong = DATA_MASTER_IZIN.slice(start, end);
+
+            dataPotong.forEach(row => {
+                let tombolSurat = row.surat !== "-" ? `<button class='btn-link' onclick="window.open('${row.surat}','_blank')">📄 Lihat Bukti</button>` : "-";
+                tbody.innerHTML += `<tr><td>${row.waktuSubmit}</td><td><b>${row.nama}</b></td><td>${row.departemen}</td><td><b>${row.jenis}</b></td><td>${row.alasan}</td><td>${row.periode}</td><td>${tombolSurat}</td></tr>`;
+            });
+
+            document.getElementById('pagiIzinBox').style.display = DATA_MASTER_IZIN.length > 0 ? 'flex' : 'none';
+            document.getElementById('textIzinPage').innerText = `Halaman ${HALAMAN_IZIN} dari ${Math.ceil(DATA_MASTER_IZIN.length / LIMIT_DATA) || 1}`;
+            document.getElementById('btnIzinPrev').disabled = (HALAMAN_IZIN === 1);
+            document.getElementById('btnIzinNext').disabled = (end >= DATA_MASTER_IZIN.length);
+        }
+    }
+
+    // KETIKA TOMBOL NEXT / PREV DIKLIK
+    function ubahHalamanDetail(tipe, arah) {
+        if (tipe === 'absen') { HALAMAN_ABSEN += arah; renderTabelDetail('absen'); } 
+        else if (tipe === 'izin') { HALAMAN_IZIN += arah; renderTabelDetail('izin'); }
+    }
+
+    // ATUR PERPINDAHAN SUB-TAB ADMIn
+    function gantiSubTampilan(target) {
+        document.querySelectorAll('.sub-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('subViewRekap').style.display = 'none';
+        document.getElementById('subViewAbsen').style.display = 'none';
+        document.getElementById('subViewIzin').style.display = 'none';
+
+        if (target === 'rekap') { document.getElementById('subViewRekap').style.display = 'block'; document.getElementById('btnSubRekap').classList.add('active'); }
+        else if (target === 'absen') { document.getElementById('subViewAbsen').style.display = 'block'; document.getElementById('btnSubAbsen').classList.add('active'); }
+        else if (target === 'izin') { document.getElementById('subViewIzin').style.display = 'block'; document.getElementById('btnSubIzin').classList.add('active'); }
     }
 </script>
 </body>
