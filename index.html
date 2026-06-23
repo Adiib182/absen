@@ -38,26 +38,24 @@
 <body>
 
 <div class="container">
-    <h2>Absen Dulu</h2>
+    <h2>Absen Dulu Donk Yang Kerja</h2>
     
     <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('tab-absen', this)">Main Absen</button>
-        <button class="tab-btn" onclick="switchTab('tab-izin', this)">Cuti / Izin</button>
-        <button class="tab-btn" style="background: #e9ecef; color: #495057;" onclick="switchTab('tab-admin', this)">Menu Admin 🔒</button>
+        <button class="tab-btn active" onclick="switchTab('tab-absen', this)">Mesin Absen</button>
+        <button class="tab-btn" onclick="switchTab('tab-izin', this)">Kalo Mau Izin</button>
+        <button class="tab-btn" style="background: #e9ecef; color: #495057;" onclick="switchTab('tab-admin', this)">Hanya Admin 🔒</button>
     </div>
 
     <!-- Form Input Karyawan -->
     <div id="form-karyawan-inputs">
         <select id="globalNama" required>
-            <option value="" disabled selected>-- Pilih Nama Lengkap Anda --</option>
-            <option value="Budi Santoso">Budi Santoso</option>
-            <option value="Siti Aminah">Siti Aminah</option>
-            <option value="Andi Wijaya">Andi Wijaya</option>
-            <option value="Hetty Lumban">Hetty Lumban</option>
+            <option value="" disabled selected>-- Pilih Nama Dulu --</option>
+            <option value="Jangkung">Jangkung</option>
+            <option value="Hendra">Hendra</option>            
         </select>
         
         <select id="globalDepartemen" required>
-            <option value="" disabled selected>-- Pilih Departemen / Divisi --</option>
+            <option value="" disabled selected>-- Pilih Kerjaan --</option>
             <option value="Security">Security</option>        
             <option value="Umum/Lainnya">Umum / Lainnya</option>
         </select>
@@ -84,9 +82,9 @@
     <!-- TAB CUTI / IZIN -->
     <div id="tab-izin" class="tab-content">
         <select id="jenisPengajuan" onchange="cekJenisPengajuan()">
-            <option value="Cuti">Cuti Tahunan</option>
-            <option value="Izin">Izin Keperluan</option>
-            <option value="Sakit">Sakit (Butuh Surat Dokter)</option>
+            <option value="Cuti">Cuti ah</option>
+            <option value="Izin">Izin Ada Perlu</option>
+            <option value="Sakit">Sakit Beneran</option>
         </select>
         
         <div id="boxSuratDokter" class="form-surat">
