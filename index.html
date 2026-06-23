@@ -36,7 +36,11 @@
         <button class="tab-btn" onclick="switchTab('tab-izin', this)">Cuti / Izin</button>
     </div>
 
-    <input type="text" id="globalNama" placeholder="Masukkan Nama Lengkap Anda" required>
+    <select id="globalNama" required>
+      <option value="" disabled selected>-- Pilih Nama Lengkap Anda --</option>
+      <option value="Jangkung">Jangkung</option>
+      <option value="Hendra">Hendra</option>
+    </select>
     
     <select id="globalDepartemen" required>
         <option value="" disabled selected>-- Pilih Departemen / Divisi --</option>
@@ -148,7 +152,7 @@
 
     // Eksekusi Tombol Absen
     function prosesAbsen(tipe) {
-        const nama = document.getElementById('globalNama').value.trim();
+        const nama = document.getElementById('globalNama').value;
         const depar = document.getElementById('globalDepartemen').value;
 
         if (!nama) return alert("Isi Nama Lengkap Anda terlebih dahulu!");
@@ -178,7 +182,7 @@
 
     // Eksekusi Tombol Pengajuan (Cuti/Izin/Sakit)
     function prosesPengajuan() {
-        const nama = document.getElementById('globalNama').value.trim();
+        const nama = document.getElementById('globalNama').value;
         const depar = document.getElementById('globalDepartemen').value;
         const jenis = document.getElementById('jenisPengajuan').value;
         const tglMulai = document.getElementById('tglMulai').value;
@@ -186,7 +190,7 @@
         const alasan = document.getElementById('alasan').value.trim();
         const fileInput = document.getElementById('fileSuratDokter');
 
-        if (!nama) return alert("Isi Nama Lengkap Anda terlebih dahulu!");
+        if (!nama) return alert("Silakan pilih Nama Anda terlebih dahulu!");
         if (!depar) return alert("Silakan pilih Departemen Anda terlebih dahulu!");
         if (!tglMulai || !tglSelesai || !alasan) return alert("Mohon lengkapi seluruh form pengajuan!");
         if (jenis === "Sakit" && fileInput.files.length === 0) return alert("Wajib melampirkan foto / bukti Surat Dokter!");
