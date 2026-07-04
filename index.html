@@ -145,7 +145,7 @@ th { background: var(--primary); color: white; }
 </div>
 
 <div class="bottom-nav" id="bottomNav">
-  <div class="nav-item active" onclick="pindahScreen('absenScreen', this)">
+  <div class="nav-item active" id="navAbsen" onclick="pindahScreen('absenScreen', this)">
     <span class="nav-icon">📷</span><span>Absen</span>
   </div>
   <div class="nav-item" onclick="pindahScreen('jadwalScreen', this); loadJadwal();">
@@ -161,7 +161,7 @@ th { background: var(--primary); color: white; }
 
 <script>
 // PASTIKAN LINK INI ADALAH URL DARI HASIL "NEW DEPLOYMENT" YANG TERAKHIR
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzrn6f94i0niH9fuCszw7TVzyVJ21D6WgkHfOVZqTWjsnbUuxCwdLEKvJK2L1EnFl5cZQ/exec";
+const GAS_URL = "ISI_DENGAN_URL_WEB_APP_BARU_ANDA";
 const KANTOR_LAT = -6.427747; const KANTOR_LON = 106.760689; const RADIUS_MAKSIMAL = 50;
 
 let userData = {};
@@ -187,12 +187,16 @@ function pindahScreen(screenId, navEl) {
 function eksekusiProteksiAdmin() {
   const adminBox = document.getElementById('adminMenuOnly');
   const navLaporan = document.getElementById('navAdminLaporan');
+  const navAbsen = document.getElementById('navAbsen'); // Element Navigasi Absen
+
   if(userData.role && userData.role.toString().trim().toLowerCase() === "admin") {
     adminBox.style.display = "block";
     navLaporan.style.display = "flex";
+    navAbsen.style.display = "none"; // Hilangkan tombol Absen untuk Admin
   } else {
     adminBox.style.display = "none";
     navLaporan.style.display = "none";
+    navAbsen.style.display = "flex"; // Tampilkan tombol Absen untuk Regu/Security
   }
 }
 
@@ -266,12 +270,22 @@ function prosesLogin() {
         document.getElementById('namaUserSpan').innerText = userData.nama;
         document.getElementById('deptUserSpan').innerText = userData.departemen;
 
-        eksekusiProteksiAdmin();
+        eksekusiProteksiAdmin(); // Cek perizinan role admin vs user
 
         document.getElementById('loginScreen').classList.remove('active');
         document.getElementById('bottomNav').style.display = "flex";
-        pindahScreen('absenScreen');
-        mulaiKameraDanGPS();
+        
+        // Cek Role untuk mengarahkan layar pertama kali
+        if(userData.role && userData.role.toString().trim().toLowerCase() === "admin") {
+          // Jika Admin: Langsung masuk ke Laporan (Kamera & GPS tidak perlu menyala)
+          pindahScreen('laporanScreen', document.getElementById('navAdminLaporan'));
+          loadLaporan();
+        } else {
+          // Jika Karyawan/User Biasa: Langsung masuk ke Kamera Absen
+          pindahScreen('absenScreen', document.getElementById('navAbsen'));
+          mulaiKameraDanGPS();
+        }
+
       } else {
         status.style.display = "block"; status.innerText = res.message;
       }
