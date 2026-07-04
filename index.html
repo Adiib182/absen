@@ -143,8 +143,7 @@
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzJhc8EUhV82Sdv-Ys8VWiMLpXazdmyOlqWQCYG54fy3lMjejyRNNPrUmctIiYqnDG-Og/exec"; 
-        // CONTOH KANTOR LAT & LON
+        const GAS_URL = "URL_DEPLOY_APPS_SCRIPT_ANDA_DISINI"; 
         const KANTOR_LAT = -6.427747; const KANTOR_LON = 106.760689; const RADIUS_MAKSIMAL = 50;
         
         let userData = {};
@@ -152,9 +151,6 @@
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
 
-        // ==========================================
-        // UI & NAVIGASI
-        // ==========================================
         function pindahScreen(screenId, navEl) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById(screenId).classList.add('active');
@@ -163,11 +159,22 @@
                 document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
                 navEl.classList.add('active');
             }
+
+            // Validasi proteksi ekstra setiap kali berpindah layar ke Jadwal
+            if(screenId === 'jadwalScreen') {
+                eksekusiProteksiAdmin();
+            }
         }
 
-        // ==========================================
-        // LOGIN
-        // ==========================================
+        function eksekusiProteksiAdmin() {
+            const adminBox = document.getElementById('adminMenuOnly');
+            if(userData.role && userData.role.toString().trim().toLowerCase() === "admin") {
+                adminBox.style.display = "block";
+            } else {
+                adminBox.style.display = "none";
+            }
+        }
+
         function prosesLogin() {
             const user = document.getElementById('loginUser').value;
             const pass = document.getElementById('loginPass').value;
@@ -186,9 +193,8 @@
                     document.getElementById('namaUserSpan').innerText = userData.nama;
                     document.getElementById('deptUserSpan').innerText = userData.departemen;
                     
-                    if(userData.role.toLowerCase() === "admin") {
-                        document.getElementById('adminMenuOnly').style.display = "block";
-                    }
+                    // Kunci visual pertama saat berhasil masuk
+                    eksekusiProteksiAdmin();
                     
                     document.getElementById('loginScreen').classList.remove('active');
                     document.getElementById('bottomNav').style.display = "flex";
@@ -202,13 +208,15 @@
 
         function logout() {
             userData = {};
+            // Reset paksa seluruh komponen UI Admin agar tidak tersisa di browser
+            document.getElementById('adminMenuOnly').style.display = "none"; 
+            document.getElementById('loginUser').value = "";
+            document.getElementById('loginPass').value = "";
+            document.getElementById('loginStatus').style.display = "none";
             document.getElementById('bottomNav').style.display = "none";
             pindahScreen('loginScreen');
         }
 
-        // ==========================================
-        // KAMERA, GPS & ABSENSI
-        // ==========================================
         function mulaiKameraDanGPS() {
             navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
                 .then(stream => { video.srcObject = stream; })
@@ -286,9 +294,6 @@
             });
         }
 
-        // ==========================================
-        // JADWAL & HUTANG SHIFT
-        // ==========================================
         function gantiTabJadwal(tab) {
             document.getElementById('btnJadwalSaya').classList.remove('active');
             document.getElementById('btnJadwalGlobal').classList.remove('active');
@@ -305,15 +310,15 @@
         }
 
         function loadJadwal() {
+            // Pastikan pengecekan proteksi berjalan saat memuat ulang data
+            eksekusiProteksiAdmin();
+
             document.getElementById('tabelJadwalSaya').innerHTML = "<tr><td colspan='2'>Memuat...</td></tr>";
             document.getElementById('tabelJadwalGlobal').innerHTML = "<tr><td colspan='4'>Memuat...</td></tr>";
             document.getElementById('tabelHutangBody').innerHTML = "<tr><td colspan='4'>Memuat...</td></tr>";
             
-            // Kirim payload dengan nama user agar server bisa memfilter
             fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "get_jadwal", nama: userData.nama }) })
             .then(res => res.json()).then(res => {
-                
-                // 1. Render Jadwal Pribadi
                 const tbSaya = document.getElementById('tabelJadwalSaya');
                 tbSaya.innerHTML = res.jadwalPribadi.length ? "" : "<tr><td colspan='2'>Jadwal Anda belum turun.</td></tr>";
                 res.jadwalPribadi.forEach(r => {
@@ -321,20 +326,18 @@
                     tbSaya.innerHTML += `<tr><td><b>${r.tgl}</b></td><td><span class="${badgeClass}">${r.shift}</span></td></tr>`;
                 });
 
-                // 2. Render Jadwal Global
                 const tbGlobal = document.getElementById('tabelJadwalGlobal');
                 tbGlobal.innerHTML = res.jadwalGlobal.length ? "" : "<tr><td colspan='4'>Data kosong.</td></tr>";
                 res.jadwalGlobal.forEach(r => {
                     tbGlobal.innerHTML += `<tr><td>${r.tgl}</td><td>${r.s1}</td><td>${r.s2}</td><td>${r.off}</td></tr>`;
                 });
 
-                // 3. Render Hutang Shift
                 const tbHutang = document.getElementById('tabelHutangBody');
                 tbHutang.innerHTML = res.hutang.length ? "" : "<tr><td colspan='4'>Tidak ada hutang.</td></tr>";
                 res.hutang.forEach(r => {
-                    // Cek row array dari spreadsheet (Tgl, Yg Sakit, Pengganti, Status)
                     let tgl = r[0] instanceof Date ? r[0].toLocaleDateString('id-ID') : r[0];
-                    tbHutang.innerHTML += `<tr><td>${tgl}</td><td style="color:red;"><b>${r[1]}</b></td><td style="color:green;"><b>${r[2]}</b></td><td>${r[3]}</td></tr>`;
+                    let statusWarna = r[3].toString().includes("Lunas") ? "style='color:green; font-weight:bold;'" : "style='color:red;'";
+                    tbHutang.innerHTML += `<tr><td>${tgl}</td><td>${r[1]}</td><td>${r[2]}</td><td ${statusWarna}>${r[3]}</td></tr>`;
                 });
             }).catch(e => {
                 alert("Gagal memuat jadwal dari server.");
@@ -357,7 +360,7 @@
                     alert(res.message);
                 } else {
                     alert(res.message);
-                    loadJadwal(); // refresh tabel agar jadwal yg baru ditukar langsung terlihat
+                    loadJadwal();
                     document.getElementById('tglTukar').value = "";
                     document.getElementById('secSakit').value = "";
                     document.getElementById('secPengganti').value = "";
