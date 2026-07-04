@@ -1,222 +1,211 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#007bff">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>App Absensi & Shift</title>
-    <style>
-        :root { --primary: #007bff; --bg: #f4f6f9; --text: #333; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); margin: 0; padding: 0; padding-bottom: 70px; color: var(--text); }
-        
-        /* Layout & Containers */
-        .screen { display: none; padding: 20px; max-width: 600px; margin: 0 auto; }
-        .screen.active { display: block; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 15px; }
-        
-        /* Form Elements */
-        input, select, button, textarea { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; font-size: 15px; }
-        button { background: var(--primary); color: white; font-weight: bold; border: none; cursor: pointer; }
-        button:disabled { background: #ccc; }
-        video, canvas { width: 100%; border-radius: 8px; background: #000; margin-bottom: 15px; }
-        #canvas { display: none; }
-        
-        /* Bottom Navigation */
-        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 10px 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 1000; display: none; }
-        .nav-item { text-align: center; color: #6c757d; font-size: 12px; cursor: pointer; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-        .nav-item.active { color: var(--primary); font-weight: bold; }
-        .nav-icon { font-size: 20px; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#007bff">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>App Absensi & Shift</title>
+<style>
+:root { --primary: #007bff; --bg: #f4f6f9; --text: #333; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); margin: 0; padding: 0; padding-bottom: 70px; color: var(--text); }
 
-        /* Tables & Status */
-        table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
-        th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
-        th { background: var(--primary); color: white; }
-        .alert { padding: 10px; border-radius: 6px; margin-bottom: 15px; font-weight: bold; text-align: center; display: none; }
-        .alert-info { background: #cce5ff; color: #004085; }
-        .alert-warning { background: #fff3cd; color: #856404; }
-        
-        #adminMenuOnly { display: none; }
+/* Layout & Containers */
+.screen { display: none; padding: 20px; max-width: 600px; margin: 0 auto; }
+.screen.active { display: block; }
+.card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 15px; }
 
-        .sub-nav-jadwal { display: flex; gap: 10px; margin-bottom: 15px; }
+/* Form Elements */
+input, select, button, textarea { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; font-size: 15px; }
+button { background: var(--primary); color: white; font-weight: bold; border: none; cursor: pointer; }
+button:disabled { background: #ccc; }
+video, canvas { width: 100%; border-radius: 8px; background: #000; margin-bottom: 15px; }
+#canvas { display: none; }
+
+/* Bottom Navigation */
+.bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 10px 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 1000; display: none; }
+.nav-item { text-align: center; color: #6c757d; font-size: 12px; cursor: pointer; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.nav-item.active { color: var(--primary); font-weight: bold; }
+.nav-icon { font-size: 20px; }
+
+/* Tables & Status */
+table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
+th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+th { background: var(--primary); color: white; }
+.alert { padding: 10px; border-radius: 6px; margin-bottom: 15px; font-weight: bold; text-align: center; display: none; }
+.alert-info { background: #cce5ff; color: #004085; }
+.alert-warning { background: #fff3cd; color: #856404; }
+
+#adminMenuOnly { display: none; }
+
+.sub-nav-jadwal { display: flex; gap: 10px; margin-bottom: 15px; }
 .sub-nav-btn { flex: 1; padding: 8px; border-radius: 6px; font-size: 13px; text-align: center; cursor: pointer; background: #e2e8f0; border: none; font-weight: bold; }
 .sub-nav-btn.active { background: var(--primary); color: white; }
 .badge-shift1 { background: #28a745; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; }
 .badge-shift2 { background: #17a2b8; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; }
 .badge-off { background: #6c757d; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; }
-    </style>
+</style>
 </head>
 <body>
 
-    <div id="loginScreen" class="screen active">
-        <div class="card" style="text-align: center; margin-top: 50px;">
-            <h2>🔐 Login Sistem</h2>
-            <input type="text" id="loginUser" placeholder="Username">
-            <input type="password" id="loginPass" placeholder="Password">
-            <button onclick="prosesLogin()" id="btnLogin">Masuk</button>
-            <div id="loginStatus" class="alert alert-warning" style="margin-top: 10px;"></div>
-        </div>
+<div id="loginScreen" class="screen active">
+  <div class="card" style="text-align: center; margin-top: 50px;">
+    <h2>🔐 Login Sistem</h2>
+    <input type="text" id="loginUser" placeholder="Username">
+    <input type="password" id="loginPass" placeholder="Password">
+    <button onclick="prosesLogin()" id="btnLogin">Masuk</button>
+    <div id="loginStatus" class="alert alert-warning" style="margin-top: 10px;"></div>
+  </div>
+</div>
+
+<div id="absenScreen" class="screen">
+  <div class="card">
+    <h3 style="margin-top:0;">👋 Halo, <span id="namaUserSpan"></span></h3>
+    <p style="font-size: 12px; color: gray;">Departemen: <span id="deptUserSpan"></span></p>
+
+    <div id="statusLokasi" class="alert alert-warning">Memeriksa lokasi GPS...</div>
+
+    <select id="shiftPilihan" onchange="validasiAbsen()">
+      <option value="" disabled selected>-- Pilih Shift 12 Jam --</option>
+      <option value="Shift 1 (08:00 - 20:00)">Shift 1 (08:00 - 20:00)</option>
+      <option value="Shift 2 (20:00 - 08:00)">Shift 2 (20:00 - 08:00)</option>
+    </select>
+
+    <video id="video" autoplay playsinline></video>
+    <canvas id="canvas"></canvas>
+
+    <div style="display: flex; gap: 10px;">
+      <button id="btnMasuk" style="background: #28a745;" onclick="kirimAbsen('Masuk')" disabled>📥 Masuk</button>
+      <button id="btnPulang" style="background: #dc3545;" onclick="kirimAbsen('Pulang')" disabled>📤 Pulang</button>
+    </div>
+  </div>
+</div>
+
+<div id="jadwalScreen" class="screen">
+  <div class="card" id="adminMenuOnly" style="display:none; border: 2px solid #ffc107;">
+    <h3 style="margin-top:0;">🔄 Admin: Form Tukar Shift</h3>
+    <p style="font-size:12px; color:gray;">Jadwal utama akan otomatis terganti berdasarkan nama di bawah ini.</p>
+    <input type="date" id="tglTukar">
+    <input type="text" id="secSakit" placeholder="Nama Security yg Izin/Sakit">
+    <input type="text" id="secPengganti" placeholder="Nama Security Pengganti">
+    <button onclick="prosesTukarShift()" style="background:#ffc107; color:#000;">Tukar & Update Jadwal</button>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0;">📅 Info Jadwal</h3>
+    <div class="sub-nav-jadwal">
+      <button class="sub-nav-btn active" id="btnJadwalSaya" onclick="gantiTabJadwal('saya')">Jadwal Saya</button>
+      <button class="sub-nav-btn" id="btnJadwalGlobal" onclick="gantiTabJadwal('global')">Jadwal Regu</button>
     </div>
 
-    <div id="absenScreen" class="screen">
-        <div class="card">
-            <h3 style="margin-top:0;">👋 Halo, <span id="namaUserSpan"></span></h3>
-            <p style="font-size: 12px; color: gray;">Departemen: <span id="deptUserSpan"></span></p>
-            
-            <div id="statusLokasi" class="alert alert-warning">Memeriksa lokasi GPS...</div>
-            
-            <select id="shiftPilihan" onchange="validasiAbsen()">
-                <option value="" disabled selected>-- Pilih Shift 12 Jam --</option>
-                <option value="Shift 1 (08:00 - 20:00)">Shift 1 (08:00 - 20:00)</option>
-                <option value="Shift 2 (20:00 - 08:00)">Shift 2 (20:00 - 08:00)</option>
-            </select>
-
-            <video id="video" autoplay playsinline></video>
-            <canvas id="canvas"></canvas>
-            
-            <div style="display: flex; gap: 10px;">
-                <button id="btnMasuk" style="background: #28a745;" onclick="kirimAbsen('Masuk')" disabled>📥 Masuk</button>
-                <button id="btnPulang" style="background: #dc3545;" onclick="kirimAbsen('Pulang')" disabled>📤 Pulang</button>
-            </div>
-        </div>
+    <div id="viewJadwalSaya">
+      <table style="margin-top: 0;">
+        <thead><tr><th>Tanggal</th><th>Shift Kerja</th></tr></thead>
+        <tbody id="tabelJadwalSaya"><tr><td colspan="2">Memuat jadwal Anda...</td></tr></tbody>
+      </table>
     </div>
 
-    <!-- 3. SCREEN JADWAL & SHIFT -->
-    <div id="jadwalScreen" class="screen">
-        
-        <div class="card" id="adminMenuOnly" style="display:none; border: 2px solid #ffc107;">
-            <h3 style="margin-top:0;">🔄 Admin: Form Tukar Shift</h3>
-            <p style="font-size:12px; color:gray;">Jadwal utama akan otomatis terganti berdasarkan nama di bawah ini.</p>
-            <input type="date" id="tglTukar">
-            <input type="text" id="secSakit" placeholder="Nama Security yg Izin/Sakit (Sesuai Jadwal)">
-            <input type="text" id="secPengganti" placeholder="Nama Security Pengganti">
-            <button onclick="prosesTukarShift()" style="background:#ffc107; color:#000;">Tukar & Update Jadwal</button>
-        </div>
-
-        <div class="card">
-            <h3 style="margin-top:0;">📅 Info Jadwal</h3>
-            
-            <div class="sub-nav-jadwal">
-                <button class="sub-nav-btn active" id="btnJadwalSaya" onclick="gantiTabJadwal('saya')">Jadwal Saya</button>
-                <button class="sub-nav-btn" id="btnJadwalGlobal" onclick="gantiTabJadwal('global')">Jadwal Regu</button>
-            </div>
-
-            <!-- TAMPILAN JADWAL PRIBADI -->
-            <div id="viewJadwalSaya">
-                <table style="margin-top: 0;">
-                    <thead><tr><th>Tanggal</th><th>Shift Kerja</th></tr></thead>
-                    <tbody id="tabelJadwalSaya"><tr><td colspan="2">Memuat jadwal Anda...</td></tr></tbody>
-                </table>
-            </div>
-
-            <!-- TAMPILAN JADWAL KESELURUHAN -->
-            <div id="viewJadwalGlobal" style="display: none; overflow-x: auto;">
-                <table style="margin-top: 0;">
-                    <thead><tr><th>Tgl</th><th>Shift 1</th><th>Shift 2</th><th>OFF</th></tr></thead>
-                    <tbody id="tabelJadwalGlobal"><tr><td colspan="4">Memuat data...</td></tr></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div id="laporanScreen" class="screen">
-        <div class="card">
-            <h3 style="margin-top:0;">📊 Laporan Absensi Harian</h3>
-            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                <select id="lapBulan"></select>
-                <select id="lapTahun"></select>
-                <button onclick="loadLaporan()" style="width: auto; padding: 10px 20px;">Cari</button>
-            </div>
-            <div style="overflow-x: auto;">
-                <table>
-                    <thead><tr><th>Waktu</th><th>Nama</th><th>Status</th><th>Shift</th><th>Foto</th></tr></thead>
-                    <tbody id="tbLaporanBody"><tr><td colspan="5">Pilih bulan dan tahun lalu klik Cari</td></tr></tbody>
-                </table>
-            </div>
-        </div>
+    <div id="viewJadwalGlobal" style="display: none; overflow-x: auto;">
+      <table style="margin-top: 0;">
+        <thead><tr><th>Tgl</th><th>Shift 1</th><th>Shift 2</th><th>OFF</th></tr></thead>
+        <tbody id="tabelJadwalGlobal"><tr><td colspan="4">Memuat data...</td></tr></tbody>
+      </table>
     </div>
-        
-        <div class="card">
-            <h3 style="margin-top:0;">📜 Daftar Hutang Shift</h3>
-            <div style="overflow-x: auto;">
-                <table>
-                    <thead><tr><th>Tgl Tukar</th><th>Yg Sakit</th><th>Pengganti</th><th>Status</th></tr></thead>
-                    <tbody id="tabelHutangBody"><tr><td colspan="4">Memuat data...</td></tr></tbody>
-                </table>
-            </div>
-        </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0;">📜 Daftar Hutang Shift</h3>
+    <div style="overflow-x: auto;">
+      <table>
+        <thead><tr><th>Tgl Tukar</th><th>Yg Sakit</th><th>Pengganti</th><th>Status</th></tr></thead>
+        <tbody id="tabelHutangBody"><tr><td colspan="4">Memuat data...</td></tr></tbody>
+      </table>
     </div>
-    <div class="bottom-nav" id="bottomNav">
-        <div class="nav-item active" onclick="pindahScreen('absenScreen', this)">
-            <span class="nav-icon">📷</span><span>Absen</span>
-        </div>
-        <div class="nav-item" onclick="pindahScreen('jadwalScreen', this); loadJadwal();">
-            <span class="nav-icon">📅</span><span>Jadwal</span>
-        </div>
-        <div class="nav-item" id="navAdminLaporan" style="display:none;" onclick="pindahScreen('laporanScreen', this); loadLaporan();">
-            <span class="nav-icon">📊</span><span>Laporan</span>
-        </div>
-        <div class="nav-item" onclick="logout()">
-            <span class="nav-icon">🚪</span><span>Keluar</span>
-        </div>
+  </div>
+</div>
+
+<div id="laporanScreen" class="screen">
+  <div class="card">
+    <h3 style="margin-top:0;">📊 Laporan Absensi (Data Terbaru)</h3>
+    <div style="overflow-x: auto;">
+      <table>
+        <thead><tr><th>Waktu</th><th>Nama</th><th>Status</th><th>Shift</th><th>Foto</th></tr></thead>
+        <tbody id="tbLaporanBody"><tr><td colspan="5">Memuat 10 data terbaru...</td></tr></tbody>
+      </table>
     </div>
+    
+    <div style="display: flex; justify-content: space-between; margin-top: 15px;">
+      <button id="btnPrevLap" onclick="gantiPageLap(-1)" style="width: 45%; background: #6c757d;" disabled>⬅️ Prev</button>
+      <button id="btnNextLap" onclick="gantiPageLap(1)" style="width: 45%; background: #6c757d;" disabled>Next ➡️</button>
+    </div>
+    <div style="text-align: center; font-size: 12px; margin-top: 10px; color: gray;" id="infoPageLap"></div>
+  </div>
+</div>
 
-    <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzrn6f94i0niH9fuCszw7TVzyVJ21D6WgkHfOVZqTWjsnbUuxCwdLEKvJK2L1EnFl5cZQ/exec"; 
-        const KANTOR_LAT = -6.427747; const KANTOR_LON = 106.760689; const RADIUS_MAKSIMAL = 50;
-        
-        let userData = {};
-        let lokasiValid = false;
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
+<div class="bottom-nav" id="bottomNav">
+  <div class="nav-item active" onclick="pindahScreen('absenScreen', this)">
+    <span class="nav-icon">📷</span><span>Absen</span>
+  </div>
+  <div class="nav-item" onclick="pindahScreen('jadwalScreen', this); loadJadwal();">
+    <span class="nav-icon">📅</span><span>Jadwal</span>
+  </div>
+  <div class="nav-item" id="navAdminLaporan" style="display:none;" onclick="pindahScreen('laporanScreen', this); loadLaporan();">
+    <span class="nav-icon">📊</span><span>Laporan</span>
+  </div>
+  <div class="nav-item" onclick="logout()">
+    <span class="nav-icon">🚪</span><span>Keluar</span>
+  </div>
+</div>
 
-        function pindahScreen(screenId, navEl) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(screenId).classList.add('active');
-            
-            if(navEl) {
-                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-                navEl.classList.add('active');
-            }
+<script>
+// PASTIKAN LINK INI ADALAH URL DARI HASIL "NEW DEPLOYMENT" YANG TERAKHIR
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzrn6f94i0niH9fuCszw7TVzyVJ21D6WgkHfOVZqTWjsnbUuxCwdLEKvJK2L1EnFl5cZQ/exec";
+const KANTOR_LAT = -6.427747; const KANTOR_LON = 106.760689; const RADIUS_MAKSIMAL = 50;
 
-            // Validasi proteksi ekstra setiap kali berpindah layar ke Jadwal
-            if(screenId === 'jadwalScreen') {
-                eksekusiProteksiAdmin();
-            }
-        }
+let userData = {};
+let lokasiValid = false;
+let currentPageLap = 1;
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
 
-        // Setup dropdown Bulan dan Tahun saat halaman pertama kali dimuat
-        const namaBulan = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
-        let optBulan = ""; namaBulan.forEach((b,i) => optBulan += `<option value="${i}">${b}</option>`);
-        document.getElementById('lapBulan').innerHTML = optBulan;
-        document.getElementById('lapBulan').value = new Date().getMonth();
+function pindahScreen(screenId, navEl) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(screenId).classList.add('active');
 
-        let optTahun = "";
-        for(let y=2024; y<=2030; y++) optTahun += `<option value="${y}">${y}</option>`;
-        document.getElementById('lapTahun').innerHTML = optTahun;
-        document.getElementById('lapTahun').value = new Date().getFullYear();
+  if(navEl) {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    navEl.classList.add('active');
+  }
 
-        function eksekusiProteksiAdmin() {
-            const adminBox = document.getElementById('adminMenuOnly');
-            const navLaporan = document.getElementById('navAdminLaporan');
-            if(userData.role && userData.role.toString().trim().toLowerCase() === "admin") {
-                adminBox.style.display = "block";
-                navLaporan.style.display = "flex"; // Tampilkan menu laporan
-            } else {
-                adminBox.style.display = "none";
-                navLaporan.style.display = "none"; // Sembunyikan dari Security
-            }
-        }
+  if(screenId === 'jadwalScreen') {
+    eksekusiProteksiAdmin();
+  }
+}
 
-        function loadLaporan() {
-  const bln = document.getElementById('lapBulan').value;
-  const thn = document.getElementById('lapTahun').value;
+function eksekusiProteksiAdmin() {
+  const adminBox = document.getElementById('adminMenuOnly');
+  const navLaporan = document.getElementById('navAdminLaporan');
+  if(userData.role && userData.role.toString().trim().toLowerCase() === "admin") {
+    adminBox.style.display = "block";
+    navLaporan.style.display = "flex";
+  } else {
+    adminBox.style.display = "none";
+    navLaporan.style.display = "none";
+  }
+}
+
+function loadLaporan(page = 1) {
+  currentPageLap = page;
   const tb = document.getElementById('tbLaporanBody');
-  tb.innerHTML = "<tr><td colspan='5'>Memuat data absensi...</td></tr>";
+  tb.innerHTML = "<tr><td colspan='5'>Memuat data...</td></tr>";
+  
+  document.getElementById('btnPrevLap').disabled = true;
+  document.getElementById('btnNextLap').disabled = true;
 
-  fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "get_laporan", bulan: bln, tahun: thn }) })
-    .then(res => res.text()) // Ambil teks murni dulu
+  fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "get_laporan", page: currentPageLap }) })
+    .then(res => res.text())
     .then(text => {
       try {
         const res = JSON.parse(text);
@@ -225,7 +214,8 @@
           return;
         }
         if (res.data.length === 0) {
-          tb.innerHTML = "<tr><td colspan='5'>Tidak ada riwayat absen di bulan ini.</td></tr>";
+          tb.innerHTML = "<tr><td colspan='5'>Tidak ada riwayat absen.</td></tr>";
+          document.getElementById('infoPageLap').innerText = "";
           return;
         }
         
@@ -241,207 +231,212 @@
             <td>${tombolFoto}</td>
           </tr>`;
         });
+
+        document.getElementById('btnPrevLap').disabled = !res.hasPrev;
+        document.getElementById('btnNextLap').disabled = !res.hasNext;
+        document.getElementById('infoPageLap').innerText = `Halaman ${res.page} dari ${res.totalPages || 1}`;
+        
       } catch (e) {
-        // Jika server mengembalikan halaman HTML peringatan keamanan Google, ini akan tercetak!
-        tb.innerHTML = `<tr><td colspan='5' style='color:red;'><b>Gagal Membaca Data:</b> Pastikan link Web App baru sudah diupdate. Raw Response: ${text.substring(0,80)}...</td></tr>`;
+        tb.innerHTML = `<tr><td colspan='5' style='color:red;'><b>Gagal Membaca Data:</b> Pastikan link Web App baru sudah diupdate. Error Code: ${text.substring(0,50)}</td></tr>`;
       }
     }).catch(e => {
       tb.innerHTML = "<tr><td colspan='5' style='color:red;'>Gagal terhubung ke jaringan.</td></tr>";
     });
 }
 
-        function prosesLogin() {
-            const user = document.getElementById('loginUser').value;
-            const pass = document.getElementById('loginPass').value;
-            const btn = document.getElementById('btnLogin');
-            const status = document.getElementById('loginStatus');
-            
-            if(!user || !pass) return alert("Isi username dan password!");
-            
-            btn.innerText = "Memverifikasi..."; btn.disabled = true;
-            
-            fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "login", username: user, password: pass }) })
-            .then(res => res.json()).then(res => {
-                btn.innerText = "Masuk"; btn.disabled = false;
-                if(res.status === "success") {
-                    userData = { nama: res.nama, role: res.role, departemen: res.departemen };
-                    document.getElementById('namaUserSpan').innerText = userData.nama;
-                    document.getElementById('deptUserSpan').innerText = userData.departemen;
-                    
-                    // Kunci visual pertama saat berhasil masuk
-                    eksekusiProteksiAdmin();
-                    
-                    document.getElementById('loginScreen').classList.remove('active');
-                    document.getElementById('bottomNav').style.display = "flex";
-                    pindahScreen('absenScreen');
-                    mulaiKameraDanGPS();
-                } else {
-                    status.style.display = "block"; status.innerText = res.message;
-                }
-            }).catch(e => alert("Gagal terhubung ke server."));
-        }
+function gantiPageLap(arah) {
+  loadLaporan(currentPageLap + arah);
+}
 
-        function logout() {
-            userData = {};
-            // Reset paksa seluruh komponen UI Admin agar tidak tersisa di browser
-            document.getElementById('adminMenuOnly').style.display = "none"; 
-            document.getElementById('loginUser').value = "";
-            document.getElementById('loginPass').value = "";
-            document.getElementById('loginStatus').style.display = "none";
-            document.getElementById('bottomNav').style.display = "none";
-            pindahScreen('loginScreen');
-        }
+function prosesLogin() {
+  const user = document.getElementById('loginUser').value;
+  const pass = document.getElementById('loginPass').value;
+  const btn = document.getElementById('btnLogin');
+  const status = document.getElementById('loginStatus');
 
-        function mulaiKameraDanGPS() {
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
-                .then(stream => { video.srcObject = stream; })
-                .catch(err => alert("Izin kamera ditolak!"));
-                
-            if (navigator.geolocation) { 
-                navigator.geolocation.watchPosition(cekLokasi, () => {
-                    document.getElementById('statusLokasi').innerText = "Gagal membaca GPS";
-                }, { enableHighAccuracy: true }); 
-            }
-        }
+  if(!user || !pass) return alert("Isi username dan password!");
 
-        function cekLokasi(position) {
-            const R = 6371e3; const lat1 = position.coords.latitude * Math.PI/180; const lat2 = KANTOR_LAT * Math.PI/180;
-            const deltaPhi = (KANTOR_LAT - position.coords.latitude) * Math.PI/180;
-            const deltaLambda = (KANTOR_LON - position.coords.longitude) * Math.PI/180;
-            const a = Math.sin(deltaPhi/2) * Math.sin(deltaPhi/2) + Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLambda/2) * Math.sin(deltaLambda/2);
-            const jarak = R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
-            
-            const statusEl = document.getElementById('statusLokasi');
-            if (jarak <= RADIUS_MAKSIMAL) {
-                statusEl.style.display = "none";
-                lokasiValid = true;
-                validasiAbsen();
-            } else {
-                statusEl.style.display = "block";
-                statusEl.className = "alert alert-warning";
-                statusEl.innerText = `Luar area. Jarak Anda: ${Math.round(jarak)}m`;
-                lokasiValid = false;
-                document.getElementById('btnMasuk').disabled = true;
-                document.getElementById('btnPulang').disabled = true;
-            }
-        }
+  btn.innerText = "Memverifikasi..."; btn.disabled = true;
 
-        function validasiAbsen() {
-            const shift = document.getElementById('shiftPilihan').value;
-            if(!shift || !lokasiValid) return;
+  fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "login", username: user, password: pass }) })
+    .then(res => res.json()).then(res => {
+      btn.innerText = "Masuk"; btn.disabled = false;
+      if(res.status === "success") {
+        userData = { nama: res.nama, role: res.role, departemen: res.departemen };
+        document.getElementById('namaUserSpan').innerText = userData.nama;
+        document.getElementById('deptUserSpan').innerText = userData.departemen;
 
-            document.getElementById('statusLokasi').style.display = "block";
-            document.getElementById('statusLokasi').innerText = "Cek riwayat absen hari ini...";
-            
-            fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "cek_status_absen", nama: userData.nama, shift: shift }) })
-            .then(res => res.json()).then(res => {
-                document.getElementById('statusLokasi').style.display = "none";
-                document.getElementById('btnMasuk').disabled = res.sudahMasuk;
-                document.getElementById('btnPulang').disabled = res.sudahPulang;
-                
-                if (res.sudahMasuk && res.sudahPulang) {
-                    document.getElementById('statusLokasi').style.display = "block";
-                    document.getElementById('statusLokasi').className = "alert alert-info";
-                    document.getElementById('statusLokasi').innerText = "Absen Shift ini sudah selesai.";
-                }
-            });
-        }
+        eksekusiProteksiAdmin();
 
-        function kirimAbsen(tipe) {
-            const shift = document.getElementById('shiftPilihan').value;
-            if(!shift) return alert("Pilih shift 12 Jam Anda!");
+        document.getElementById('loginScreen').classList.remove('active');
+        document.getElementById('bottomNav').style.display = "flex";
+        pindahScreen('absenScreen');
+        mulaiKameraDanGPS();
+      } else {
+        status.style.display = "block"; status.innerText = res.message;
+      }
+    }).catch(e => alert("Gagal terhubung ke server."));
+}
 
-            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-            
-            const payload = {
-                action: "absen", nama: userData.nama, departemen: userData.departemen,
-                status: tipe, shift: shift, foto: canvas.toDataURL('image/jpeg', 0.6)
-            };
+function logout() {
+  userData = {};
+  document.getElementById('adminMenuOnly').style.display = "none";
+  document.getElementById('loginUser').value = "";
+  document.getElementById('loginPass').value = "";
+  document.getElementById('loginStatus').style.display = "none";
+  document.getElementById('bottomNav').style.display = "none";
+  pindahScreen('loginScreen');
+}
 
-            document.getElementById('statusLokasi').style.display = "block";
-            document.getElementById('statusLokasi').innerText = "Mengirim data...";
+function mulaiKameraDanGPS() {
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+    .then(stream => { video.srcObject = stream; })
+    .catch(err => alert("Izin kamera ditolak!"));
 
-            fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) })
-            .then(res => res.json()).then(res => {
-                alert(res.message);
-                validasiAbsen();
-            });
-        }
+  if (navigator.geolocation) {
+    navigator.geolocation.watchPosition(cekLokasi, () => {
+      document.getElementById('statusLokasi').innerText = "Gagal membaca GPS";
+    }, { enableHighAccuracy: true });
+  }
+}
 
-        function gantiTabJadwal(tab) {
-            document.getElementById('btnJadwalSaya').classList.remove('active');
-            document.getElementById('btnJadwalGlobal').classList.remove('active');
-            document.getElementById('viewJadwalSaya').style.display = 'none';
-            document.getElementById('viewJadwalGlobal').style.display = 'none';
+function cekLokasi(position) {
+  const R = 6371e3; const lat1 = position.coords.latitude * Math.PI/180; const lat2 = KANTOR_LAT * Math.PI/180;
+  const deltaPhi = (KANTOR_LAT - position.coords.latitude) * Math.PI/180;
+  const deltaLambda = (KANTOR_LON - position.coords.longitude) * Math.PI/180;
+  const a = Math.sin(deltaPhi/2) * Math.sin(deltaPhi/2) + Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLambda/2) * Math.sin(deltaLambda/2);
+  const jarak = R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
 
-            if(tab === 'saya') {
-                document.getElementById('btnJadwalSaya').classList.add('active');
-                document.getElementById('viewJadwalSaya').style.display = 'block';
-            } else {
-                document.getElementById('btnJadwalGlobal').classList.add('active');
-                document.getElementById('viewJadwalGlobal').style.display = 'block';
-            }
-        }
+  const statusEl = document.getElementById('statusLokasi');
+  if (jarak <= RADIUS_MAKSIMAL) {
+    statusEl.style.display = "none";
+    lokasiValid = true;
+    validasiAbsen();
+  } else {
+    statusEl.style.display = "block";
+    statusEl.className = "alert alert-warning";
+    statusEl.innerText = `Luar area. Jarak Anda: ${Math.round(jarak)}m`;
+    lokasiValid = false;
+    document.getElementById('btnMasuk').disabled = true;
+    document.getElementById('btnPulang').disabled = true;
+  }
+}
 
-        function loadJadwal() {
-            // Pastikan pengecekan proteksi berjalan saat memuat ulang data
-            eksekusiProteksiAdmin();
+function validasiAbsen() {
+  const shift = document.getElementById('shiftPilihan').value;
+  if(!shift || !lokasiValid) return;
 
-            document.getElementById('tabelJadwalSaya').innerHTML = "<tr><td colspan='2'>Memuat...</td></tr>";
-            document.getElementById('tabelJadwalGlobal').innerHTML = "<tr><td colspan='4'>Memuat...</td></tr>";
-            document.getElementById('tabelHutangBody').innerHTML = "<tr><td colspan='4'>Memuat...</td></tr>";
-            
-            fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "get_jadwal", nama: userData.nama }) })
-            .then(res => res.json()).then(res => {
-                const tbSaya = document.getElementById('tabelJadwalSaya');
-                tbSaya.innerHTML = res.jadwalPribadi.length ? "" : "<tr><td colspan='2'>Jadwal Anda belum turun.</td></tr>";
-                res.jadwalPribadi.forEach(r => {
-                    let badgeClass = r.shift.includes("Shift 1") ? "badge-shift1" : (r.shift.includes("Shift 2") ? "badge-shift2" : "badge-off");
-                    tbSaya.innerHTML += `<tr><td><b>${r.tgl}</b></td><td><span class="${badgeClass}">${r.shift}</span></td></tr>`;
-                });
+  document.getElementById('statusLokasi').style.display = "block";
+  document.getElementById('statusLokasi').innerText = "Cek riwayat absen hari ini...";
 
-                const tbGlobal = document.getElementById('tabelJadwalGlobal');
-                tbGlobal.innerHTML = res.jadwalGlobal.length ? "" : "<tr><td colspan='4'>Data kosong.</td></tr>";
-                res.jadwalGlobal.forEach(r => {
-                    tbGlobal.innerHTML += `<tr><td>${r.tgl}</td><td>${r.s1}</td><td>${r.s2}</td><td>${r.off}</td></tr>`;
-                });
+  fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "cek_status_absen", nama: userData.nama, shift: shift }) })
+    .then(res => res.json()).then(res => {
+      document.getElementById('statusLokasi').style.display = "none";
+      document.getElementById('btnMasuk').disabled = res.sudahMasuk;
+      document.getElementById('btnPulang').disabled = res.sudahPulang;
 
-                const tbHutang = document.getElementById('tabelHutangBody');
-                tbHutang.innerHTML = res.hutang.length ? "" : "<tr><td colspan='4'>Tidak ada hutang.</td></tr>";
-                res.hutang.forEach(r => {
-                    let tgl = r[0] instanceof Date ? r[0].toLocaleDateString('id-ID') : r[0];
-                    let statusWarna = r[3].toString().includes("Lunas") ? "style='color:green; font-weight:bold;'" : "style='color:red;'";
-                    tbHutang.innerHTML += `<tr><td>${tgl}</td><td>${r[1]}</td><td>${r[2]}</td><td ${statusWarna}>${r[3]}</td></tr>`;
-                });
-            }).catch(e => {
-                alert("Gagal memuat jadwal dari server.");
-            });
-        }
+      if (res.sudahMasuk && res.sudahPulang) {
+        document.getElementById('statusLokasi').style.display = "block";
+        document.getElementById('statusLokasi').className = "alert alert-info";
+        document.getElementById('statusLokasi').innerText = "Absen Shift ini sudah selesai.";
+      }
+    });
+}
 
-        function prosesTukarShift() {
-            const tgl = document.getElementById('tglTukar').value;
-            const sakit = document.getElementById('secSakit').value;
-            const pengganti = document.getElementById('secPengganti').value;
+function kirimAbsen(tipe) {
+  const shift = document.getElementById('shiftPilihan').value;
+  if(!shift) return alert("Pilih shift 12 Jam Anda!");
 
-            if(!tgl || !sakit || !pengganti) return alert("Pilih tanggal dan lengkapi nama!");
-            
-            fetch(GAS_URL, { 
-                method: "POST", 
-                body: JSON.stringify({ action: "tukar_shift", tanggal: tgl, sakit: sakit, pengganti: pengganti }) 
-            })
-            .then(res => res.json()).then(res => {
-                if(res.status === "error") {
-                    alert(res.message);
-                } else {
-                    alert(res.message);
-                    loadJadwal();
-                    document.getElementById('tglTukar').value = "";
-                    document.getElementById('secSakit').value = "";
-                    document.getElementById('secPengganti').value = "";
-                }
-            });
-        }
-    </script>
+  canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+
+  const payload = {
+    action: "absen", nama: userData.nama, departemen: userData.departemen,
+    status: tipe, shift: shift, foto: canvas.toDataURL('image/jpeg', 0.6)
+  };
+
+  document.getElementById('statusLokasi').style.display = "block";
+  document.getElementById('statusLokasi').innerText = "Mengirim data...";
+
+  fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) })
+    .then(res => res.json()).then(res => {
+      alert(res.message);
+      validasiAbsen();
+    });
+}
+
+function gantiTabJadwal(tab) {
+  document.getElementById('btnJadwalSaya').classList.remove('active');
+  document.getElementById('btnJadwalGlobal').classList.remove('active');
+  document.getElementById('viewJadwalSaya').style.display = 'none';
+  document.getElementById('viewJadwalGlobal').style.display = 'none';
+
+  if(tab === 'saya') {
+    document.getElementById('btnJadwalSaya').classList.add('active');
+    document.getElementById('viewJadwalSaya').style.display = 'block';
+  } else {
+    document.getElementById('btnJadwalGlobal').classList.add('active');
+    document.getElementById('viewJadwalGlobal').style.display = 'block';
+  }
+}
+
+function loadJadwal() {
+  eksekusiProteksiAdmin();
+
+  document.getElementById('tabelJadwalSaya').innerHTML = "<tr><td colspan='2'>Memuat...</td></tr>";
+  document.getElementById('tabelJadwalGlobal').innerHTML = "<tr><td colspan='4'>Memuat...</td></tr>";
+  document.getElementById('tabelHutangBody').innerHTML = "<tr><td colspan='4'>Memuat...</td></tr>";
+
+  fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "get_jadwal", nama: userData.nama }) })
+    .then(res => res.json()).then(res => {
+      const tbSaya = document.getElementById('tabelJadwalSaya');
+      tbSaya.innerHTML = res.jadwalPribadi.length ? "" : "<tr><td colspan='2'>Jadwal Anda belum turun.</td></tr>";
+      res.jadwalPribadi.forEach(r => {
+        let badgeClass = r.shift.includes("Shift 1") ? "badge-shift1" : (r.shift.includes("Shift 2") ? "badge-shift2" : "badge-off");
+        tbSaya.innerHTML += `<tr><td><b>${r.tgl}</b></td><td><span class="${badgeClass}">${r.shift}</span></td></tr>`;
+      });
+
+      const tbGlobal = document.getElementById('tabelJadwalGlobal');
+      tbGlobal.innerHTML = res.jadwalGlobal.length ? "" : "<tr><td colspan='4'>Data kosong.</td></tr>";
+      res.jadwalGlobal.forEach(r => {
+        tbGlobal.innerHTML += `<tr><td>${r.tgl}</td><td>${r.s1}</td><td>${r.s2}</td><td>${r.off}</td></tr>`;
+      });
+
+      const tbHutang = document.getElementById('tabelHutangBody');
+      tbHutang.innerHTML = res.hutang.length ? "" : "<tr><td colspan='4'>Tidak ada hutang.</td></tr>";
+      res.hutang.forEach(r => {
+        let tgl = r[0] instanceof Date ? r[0].toLocaleDateString('id-ID') : r[0];
+        let statusWarna = r[3].toString().includes("Lunas") ? "style='color:green; font-weight:bold;'" : "style='color:red;'";
+        tbHutang.innerHTML += `<tr><td>${tgl}</td><td>${r[1]}</td><td>${r[2]}</td><td ${statusWarna}>${r[3]}</td></tr>`;
+      });
+    }).catch(e => {
+      alert("Gagal memuat jadwal dari server.");
+    });
+}
+
+function prosesTukarShift() {
+  const tgl = document.getElementById('tglTukar').value;
+  const sakit = document.getElementById('secSakit').value;
+  const pengganti = document.getElementById('secPengganti').value;
+
+  if(!tgl || !sakit || !pengganti) return alert("Pilih tanggal dan lengkapi nama!");
+
+  fetch(GAS_URL, {
+    method: "POST",
+    body: JSON.stringify({ action: "tukar_shift", tanggal: tgl, sakit: sakit, pengganti: pengganti })
+  })
+  .then(res => res.json()).then(res => {
+    if(res.status === "error") {
+      alert(res.message);
+    } else {
+      alert(res.message);
+      loadJadwal();
+      document.getElementById('tglTukar').value = "";
+      document.getElementById('secSakit').value = "";
+      document.getElementById('secPengganti').value = "";
+    }
+  });
+}
+</script>
 </body>
 </html>
