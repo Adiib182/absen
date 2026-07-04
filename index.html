@@ -39,6 +39,13 @@
         .alert-warning { background: #fff3cd; color: #856404; }
         
         #adminMenuOnly { display: none; }
+
+        .sub-nav-jadwal { display: flex; gap: 10px; margin-bottom: 15px; }
+.sub-nav-btn { flex: 1; padding: 8px; border-radius: 6px; font-size: 13px; text-align: center; cursor: pointer; background: #e2e8f0; border: none; font-weight: bold; }
+.sub-nav-btn.active { background: var(--primary); color: white; }
+.badge-shift1 { background: #28a745; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; }
+.badge-shift2 { background: #17a2b8; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; }
+.badge-off { background: #6c757d; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; }
     </style>
 </head>
 <body>
@@ -76,40 +83,53 @@
         </div>
     </div>
 
+    <!-- 3. SCREEN JADWAL & SHIFT -->
     <div id="jadwalScreen" class="screen">
+        
+        <div class="card" id="adminMenuOnly" style="display:none; border: 2px solid #ffc107;">
+            <h3 style="margin-top:0;">🔄 Admin: Form Tukar Shift</h3>
+            <p style="font-size:12px; color:gray;">Jadwal utama akan otomatis terganti berdasarkan nama di bawah ini.</p>
+            <input type="date" id="tglTukar">
+            <input type="text" id="secSakit" placeholder="Nama Security yg Izin/Sakit (Sesuai Jadwal)">
+            <input type="text" id="secPengganti" placeholder="Nama Security Pengganti">
+            <button onclick="prosesTukarShift()" style="background:#ffc107; color:#000;">Tukar & Update Jadwal</button>
+        </div>
+
         <div class="card">
-            <h3>📅 Jadwal Shift 12 Jam</h3>
-            <button onclick="loadJadwal()" style="background: #17a2b8;">🔄 Refresh Jadwal</button>
-            <div style="overflow-x: auto;">
-                <table>
-                    <thead><tr><th>Tanggal</th><th>Shift 1</th><th>Shift 2</th><th>Libur/Off</th></tr></thead>
-                    <tbody id="tabelJadwalBody"><tr><td colspan="4">Memuat data...</td></tr></tbody>
+            <h3 style="margin-top:0;">📅 Info Jadwal</h3>
+            
+            <div class="sub-nav-jadwal">
+                <button class="sub-nav-btn active" id="btnJadwalSaya" onclick="gantiTabJadwal('saya')">Jadwal Saya</button>
+                <button class="sub-nav-btn" id="btnJadwalGlobal" onclick="gantiTabJadwal('global')">Jadwal Regu</button>
+            </div>
+
+            <!-- TAMPILAN JADWAL PRIBADI -->
+            <div id="viewJadwalSaya">
+                <table style="margin-top: 0;">
+                    <thead><tr><th>Tanggal</th><th>Shift Kerja</th></tr></thead>
+                    <tbody id="tabelJadwalSaya"><tr><td colspan="2">Memuat jadwal Anda...</td></tr></tbody>
+                </table>
+            </div>
+
+            <!-- TAMPILAN JADWAL KESELURUHAN -->
+            <div id="viewJadwalGlobal" style="display: none; overflow-x: auto;">
+                <table style="margin-top: 0;">
+                    <thead><tr><th>Tgl</th><th>Shift 1</th><th>Shift 2</th><th>OFF</th></tr></thead>
+                    <tbody id="tabelJadwalGlobal"><tr><td colspan="4">Memuat data...</td></tr></tbody>
                 </table>
             </div>
         </div>
 
-        <div class="card" id="adminMenuOnly">
-            <h3>🔄 Tukar Shift / Hutang (Admin)</h3>
-            <label>Tanggal Tukar:</label>
-            <input type="date" id="tglTukar">
-            <label>Security (Sakit/Izin):</label>
-            <input type="text" id="secSakit" placeholder="Nama yang digantikan">
-            <label>Security Pengganti (Yang mem-backup):</label>
-            <input type="text" id="secPengganti" placeholder="Nama yang menggantikan">
-            <button onclick="prosesTukarShift()">Simpan Tukar Shift</button>
-        </div>
-
         <div class="card">
-            <h3>📜 Daftar Hutang Shift</h3>
+            <h3 style="margin-top:0;">📜 Daftar Hutang Shift</h3>
             <div style="overflow-x: auto;">
                 <table>
-                    <thead><tr><th>Tanggal</th><th>Yg Berhutang (Sakit)</th><th>Piutang (Pengganti)</th><th>Status</th></tr></thead>
+                    <thead><tr><th>Tgl Tukar</th><th>Yg Sakit</th><th>Pengganti</th><th>Status</th></tr></thead>
                     <tbody id="tabelHutangBody"><tr><td colspan="4">Memuat data...</td></tr></tbody>
                 </table>
             </div>
         </div>
     </div>
-
     <div class="bottom-nav" id="bottomNav">
         <div class="nav-item active" onclick="pindahScreen('absenScreen', this)">
             <span class="nav-icon">📷</span><span>Absen</span>
@@ -267,22 +287,57 @@
         }
 
         // ==========================================
-        // JADWAL & HUTANG SHIFT (ADMIN)
+        // JADWAL & HUTANG SHIFT
         // ==========================================
+        function gantiTabJadwal(tab) {
+            document.getElementById('btnJadwalSaya').classList.remove('active');
+            document.getElementById('btnJadwalGlobal').classList.remove('active');
+            document.getElementById('viewJadwalSaya').style.display = 'none';
+            document.getElementById('viewJadwalGlobal').style.display = 'none';
+
+            if(tab === 'saya') {
+                document.getElementById('btnJadwalSaya').classList.add('active');
+                document.getElementById('viewJadwalSaya').style.display = 'block';
+            } else {
+                document.getElementById('btnJadwalGlobal').classList.add('active');
+                document.getElementById('viewJadwalGlobal').style.display = 'block';
+            }
+        }
+
         function loadJadwal() {
-            document.getElementById('tabelJadwalBody').innerHTML = "<tr><td colspan='4'>Memuat...</td></tr>";
+            document.getElementById('tabelJadwalSaya').innerHTML = "<tr><td colspan='2'>Memuat...</td></tr>";
+            document.getElementById('tabelJadwalGlobal').innerHTML = "<tr><td colspan='4'>Memuat...</td></tr>";
             document.getElementById('tabelHutangBody').innerHTML = "<tr><td colspan='4'>Memuat...</td></tr>";
             
-            fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "get_jadwal" }) })
+            // Kirim payload dengan nama user agar server bisa memfilter
+            fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "get_jadwal", nama: userData.nama }) })
             .then(res => res.json()).then(res => {
-                const tbJadwal = document.getElementById('tabelJadwalBody');
-                const tbHutang = document.getElementById('tabelHutangBody');
                 
-                tbJadwal.innerHTML = res.jadwal.length ? "" : "<tr><td colspan='4'>Data kosong.</td></tr>";
-                res.jadwal.forEach(r => tbJadwal.innerHTML += `<tr><td>${new Date(r[0]).toLocaleDateString('id-ID')}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`);
+                // 1. Render Jadwal Pribadi
+                const tbSaya = document.getElementById('tabelJadwalSaya');
+                tbSaya.innerHTML = res.jadwalPribadi.length ? "" : "<tr><td colspan='2'>Jadwal Anda belum turun.</td></tr>";
+                res.jadwalPribadi.forEach(r => {
+                    let badgeClass = r.shift.includes("Shift 1") ? "badge-shift1" : (r.shift.includes("Shift 2") ? "badge-shift2" : "badge-off");
+                    tbSaya.innerHTML += `<tr><td><b>${r.tgl}</b></td><td><span class="${badgeClass}">${r.shift}</span></td></tr>`;
+                });
 
-                tbHutang.innerHTML = res.hutang.length ? "" : "<tr><td colspan='4'>Data kosong.</td></tr>";
-                res.hutang.forEach(r => tbHutang.innerHTML += `<tr><td>${new Date(r[0]).toLocaleDateString('id-ID')}</td><td style="color:red; font-weight:bold">${r[1]}</td><td style="color:green; font-weight:bold">${r[2]}</td><td>${r[3]}</td></tr>`);
+                // 2. Render Jadwal Global
+                const tbGlobal = document.getElementById('tabelJadwalGlobal');
+                tbGlobal.innerHTML = res.jadwalGlobal.length ? "" : "<tr><td colspan='4'>Data kosong.</td></tr>";
+                res.jadwalGlobal.forEach(r => {
+                    tbGlobal.innerHTML += `<tr><td>${r.tgl}</td><td>${r.s1}</td><td>${r.s2}</td><td>${r.off}</td></tr>`;
+                });
+
+                // 3. Render Hutang Shift
+                const tbHutang = document.getElementById('tabelHutangBody');
+                tbHutang.innerHTML = res.hutang.length ? "" : "<tr><td colspan='4'>Tidak ada hutang.</td></tr>";
+                res.hutang.forEach(r => {
+                    // Cek row array dari spreadsheet (Tgl, Yg Sakit, Pengganti, Status)
+                    let tgl = r[0] instanceof Date ? r[0].toLocaleDateString('id-ID') : r[0];
+                    tbHutang.innerHTML += `<tr><td>${tgl}</td><td style="color:red;"><b>${r[1]}</b></td><td style="color:green;"><b>${r[2]}</b></td><td>${r[3]}</td></tr>`;
+                });
+            }).catch(e => {
+                alert("Gagal memuat jadwal dari server.");
             });
         }
 
@@ -291,18 +346,22 @@
             const sakit = document.getElementById('secSakit').value;
             const pengganti = document.getElementById('secPengganti').value;
 
-            if(!tgl || !sakit || !pengganti) return alert("Lengkapi data tukar shift!");
+            if(!tgl || !sakit || !pengganti) return alert("Pilih tanggal dan lengkapi nama!");
             
             fetch(GAS_URL, { 
                 method: "POST", 
                 body: JSON.stringify({ action: "tukar_shift", tanggal: tgl, sakit: sakit, pengganti: pengganti }) 
             })
             .then(res => res.json()).then(res => {
-                alert(res.message);
-                loadJadwal(); // refresh tabel
-                document.getElementById('tglTukar').value = "";
-                document.getElementById('secSakit').value = "";
-                document.getElementById('secPengganti').value = "";
+                if(res.status === "error") {
+                    alert(res.message);
+                } else {
+                    alert(res.message);
+                    loadJadwal(); // refresh tabel agar jadwal yg baru ditukar langsung terlihat
+                    document.getElementById('tglTukar').value = "";
+                    document.getElementById('secSakit').value = "";
+                    document.getElementById('secPengganti').value = "";
+                }
             });
         }
     </script>
