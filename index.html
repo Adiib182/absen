@@ -120,6 +120,23 @@
             </div>
         </div>
 
+        <div id="laporanScreen" class="screen">
+        <div class="card">
+            <h3 style="margin-top:0;">📊 Laporan Absensi Harian</h3>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <select id="lapBulan"></select>
+                <select id="lapTahun"></select>
+                <button onclick="loadLaporan()" style="width: auto; padding: 10px 20px;">Cari</button>
+            </div>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead><tr><th>Waktu</th><th>Nama</th><th>Status</th><th>Shift</th><th>Foto</th></tr></thead>
+                    <tbody id="tbLaporanBody"><tr><td colspan="5">Pilih bulan dan tahun lalu klik Cari</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+        
         <div class="card">
             <h3 style="margin-top:0;">📜 Daftar Hutang Shift</h3>
             <div style="overflow-x: auto;">
@@ -136,6 +153,9 @@
         </div>
         <div class="nav-item" onclick="pindahScreen('jadwalScreen', this); loadJadwal();">
             <span class="nav-icon">📅</span><span>Jadwal</span>
+        </div>
+        <div class="nav-item" id="navAdminLaporan" style="display:none;" onclick="pindahScreen('laporanScreen', this); loadLaporan();">
+            <span class="nav-icon">📊</span><span>Laporan</span>
         </div>
         <div class="nav-item" onclick="logout()">
             <span class="nav-icon">🚪</span><span>Keluar</span>
@@ -166,13 +186,55 @@
             }
         }
 
+        // Setup dropdown Bulan dan Tahun saat halaman pertama kali dimuat
+        const namaBulan = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+        let optBulan = ""; namaBulan.forEach((b,i) => optBulan += `<option value="${i}">${b}</option>`);
+        document.getElementById('lapBulan').innerHTML = optBulan;
+        document.getElementById('lapBulan').value = new Date().getMonth();
+
+        let optTahun = "";
+        for(let y=2024; y<=2030; y++) optTahun += `<option value="${y}">${y}</option>`;
+        document.getElementById('lapTahun').innerHTML = optTahun;
+        document.getElementById('lapTahun').value = new Date().getFullYear();
+
         function eksekusiProteksiAdmin() {
             const adminBox = document.getElementById('adminMenuOnly');
+            const navLaporan = document.getElementById('navAdminLaporan');
             if(userData.role && userData.role.toString().trim().toLowerCase() === "admin") {
                 adminBox.style.display = "block";
+                navLaporan.style.display = "flex"; // Tampilkan menu laporan
             } else {
                 adminBox.style.display = "none";
+                navLaporan.style.display = "none"; // Sembunyikan dari Security
             }
+        }
+
+        function loadLaporan() {
+            const bln = document.getElementById('lapBulan').value;
+            const thn = document.getElementById('lapTahun').value;
+            const tb = document.getElementById('tbLaporanBody');
+            tb.innerHTML = "<tr><td colspan='5'>Memuat data absensi...</td></tr>";
+
+            fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "get_laporan", bulan: bln, tahun: thn }) })
+            .then(res => res.json()).then(res => {
+                if(res.data.length === 0) {
+                    tb.innerHTML = "<tr><td colspan='5'>Tidak ada riwayat absen di bulan ini.</td></tr>";
+                    return;
+                }
+                tb.innerHTML = "";
+                res.data.forEach(r => {
+                    let warnaStatus = r.status === "Masuk" ? "color:green;" : "color:red;";
+                    tb.innerHTML += `<tr>
+                        <td style="white-space: nowrap;">${r.waktu}</td>
+                        <td><b>${r.nama}</b></td>
+                        <td style="${warnaStatus} font-weight:bold;">${r.status}</td>
+                        <td>${r.shift}</td>
+                        <td><a href="${r.foto}" target="_blank" style="background:#007bff; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:11px;">Lihat</a></td>
+                    </tr>`;
+                });
+            }).catch(e => {
+                tb.innerHTML = "<tr><td colspan='5'>Gagal menarik data dari server.</td></tr>";
+            });
         }
 
         function prosesLogin() {
