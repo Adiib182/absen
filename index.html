@@ -367,21 +367,33 @@ function kirimAbsen(tipe) {
   const shift = document.getElementById('shiftPilihan').value;
   if(!shift) return alert("Pilih shift 12 Jam Anda!");
 
+  // 1. LANGSUNG KUNCI TOMBOL SAAT DIKLIK MENCEGAH SPAM / DOUBLE KLIK
+  document.getElementById('btnMasuk').disabled = true;
+  document.getElementById('btnPulang').disabled = true;
+
   canvas.width = video.videoWidth; canvas.height = video.videoHeight;
   canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-
   const payload = {
     action: "absen", nama: userData.nama, departemen: userData.departemen,
     status: tipe, shift: shift, foto: canvas.toDataURL('image/jpeg', 0.6)
   };
 
-  document.getElementById('statusLokasi').style.display = "block";
-  document.getElementById('statusLokasi').innerText = "Mengirim data...";
+  // 2. TAMPILKAN STATUS LOADING YANG JELAS
+  const statusEl = document.getElementById('statusLokasi');
+  statusEl.style.display = "block";
+  statusEl.className = "alert alert-info"; // Pakai warna biru
+  statusEl.innerText = "⏳ Sedang mengirim data & foto... Mohon tunggu sebentar.";
 
   fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) })
     .then(res => res.json()).then(res => {
       alert(res.message);
-      validasiAbsen();
+      // Pengecekan ulang ini akan mengunci tombol secara permanen untuk shift tersebut
+      validasiAbsen(); 
+    })
+    .catch(e => {
+      alert("Gagal mengirim data! Pastikan internet stabil.");
+      // Buka kunci tombol lagi jika proses ternyata gagal agar user bisa coba lagi
+      validasiAbsen(); 
     });
 }
 
