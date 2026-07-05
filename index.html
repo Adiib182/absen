@@ -8,6 +8,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>App Absensi & Shift</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
 <style>
 :root { --primary: #007bff; --bg: #f4f6f9; --text: #333; }
 body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); margin: 0; padding: 0; padding-bottom: 70px; color: var(--text); }
@@ -451,6 +453,17 @@ function prosesTukarShift() {
     }
   });
 }
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then(registration => {
+          console.log('ServiceWorker sukses didaftarkan dengan scope: ', registration.scope);
+        }, err => {
+          console.log('ServiceWorker gagal didaftarkan: ', err);
+        });
+    });
+  }
 </script>
 </body>
 </html>
