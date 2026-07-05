@@ -346,20 +346,41 @@ function validasiAbsen() {
   const shift = document.getElementById('shiftPilihan').value;
   if(!shift || !lokasiValid) return;
 
-  document.getElementById('statusLokasi').style.display = "block";
-  document.getElementById('statusLokasi').innerText = "Cek riwayat absen hari ini...";
+  const btnMasuk = document.getElementById('btnMasuk');
+  const btnPulang = document.getElementById('btnPulang');
+  const statusEl = document.getElementById('statusLokasi');
+
+  // 1. Sembunyikan alert agar tidak ada kotak kuning yang muncul-hilang
+  statusEl.style.display = "none";
+
+  // 2. Ubah teks tombol jadi indikator loading dan nonaktifkan sementara
+  btnMasuk.innerText = "⏳ Cek Data...";
+  btnPulang.innerText = "⏳ Cek Data...";
+  btnMasuk.disabled = true;
+  btnPulang.disabled = true;
 
   fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "cek_status_absen", nama: userData.nama, shift: shift }) })
     .then(res => res.json()).then(res => {
-      document.getElementById('statusLokasi').style.display = "none";
-      document.getElementById('btnMasuk').disabled = res.sudahMasuk;
-      document.getElementById('btnPulang').disabled = res.sudahPulang;
+      // 3. Kembalikan teks tombol ke semula setelah server membalas
+      btnMasuk.innerText = "📥 Masuk";
+      btnPulang.innerText = "📤 Pulang";
 
+      // 4. Aktifkan/nonaktifkan tombol sesuai riwayat server
+      btnMasuk.disabled = res.sudahMasuk;
+      btnPulang.disabled = res.sudahPulang;
+
+      // 5. Kotak alert HANYA muncul jika kedua absen benar-benar sudah tuntas
       if (res.sudahMasuk && res.sudahPulang) {
-        document.getElementById('statusLokasi').style.display = "block";
-        document.getElementById('statusLokasi').className = "alert alert-info";
-        document.getElementById('statusLokasi').innerText = "Absen Shift ini sudah selesai.";
+        statusEl.style.display = "block";
+        statusEl.className = "alert alert-info";
+        statusEl.innerText = "Absen Shift ini sudah selesai.";
       }
+    })
+    .catch(e => {
+      // Jaga-jaga kalau sinyal jelek saat ngecek
+      btnMasuk.innerText = "📥 Masuk";
+      btnPulang.innerText = "📤 Pulang";
+      alert("Gagal mengecek riwayat absen. Pastikan internet stabil.");
     });
 }
 
