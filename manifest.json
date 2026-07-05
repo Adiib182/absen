@@ -1,6 +1,6 @@
 {
   "name": "Sistem Absensi",
-  "short_name": "Absen",
+  "short_name": "Security TPS",
   "description": "Aplikasi Absensi Tikpul",
   "start_url": "/index.html",
   "display": "standalone",
