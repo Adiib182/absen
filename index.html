@@ -8,10 +8,12 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>App Absensi & Shift</title>
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-192.png">
-<link rel="manifest" href="/manifest.json">
-<link rel="apple-touch-icon" href="/icon-192.png">
+<!-- TAG WAJIB PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2e7d32">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <!-- Favicon fallback agar tidak error merah di console -->
+  <link rel="icon" type="image/png" href="icon-192.png">
 <style>
 :root { --primary: #007bff; --bg: #f4f6f9; --text: #333; }
 body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); margin: 0; padding: 0; padding-bottom: 70px; color: var(--text); }
