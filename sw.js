@@ -1,10 +1,12 @@
-const CACHE_NAME = 'absensi-pwa-v1';
+// Ubah nama cache agar HP pengguna mengunduh ulang file-file baru
+const CACHE_NAME = 'absensi-pwa-v2'; // Naikkan dari v1 ke v2
+
 const urlsToCache = [
-  './',
-  './index.html',
-  './manifest.json',
-  './icon-192.png',
-  './icon-512.png'
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/icon-192.png',
+  '/icon-512.png'
 ];
 
 // Install Service Worker
