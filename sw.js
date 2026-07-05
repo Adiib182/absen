@@ -1,38 +1,48 @@
-// Ubah nama cache agar HP pengguna mengunduh ulang file-file baru
-const CACHE_NAME = 'absensi-pwa-v2'; // Naikkan dari v1 ke v2
-
+const CACHE_NAME = 'Absen-v1';
 const urlsToCache = [
   '/',
   '/index.html',
-  '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png'
+  '/registrasi.html',
+  '/admin-page.html',
+  '/rekap.html'
 ];
 
-// Install Service Worker
+// Install Service Worker dan simpan file ke cache
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
+        console.log('Membuka cache');
         return cache.addAll(urlsToCache);
       })
   );
 });
 
-// Fetch dari Cache jika offline
+// Ambil file dari cache jika ada, jika tidak ambil dari internet
 self.addEventListener('fetch', event => {
-  // Hanya intercept request ke file lokal, biarkan request ke GAS URL lewat internet
-  if (event.request.url.includes('script.google.com')) {
-    return; 
-  }
-  
   event.respondWith(
     caches.match(event.request)
       .then(response => {
         if (response) {
-          return response; // Gunakan file dari cache
+          return response; // Gunakan versi cache
         }
-        return fetch(event.request); // Ambil dari internet jika tidak ada di cache
+        return fetch(event.request); // Gunakan internet
       })
+  );
+});
+
+// Hapus cache lama jika ada versi baru
+self.addEventListener('activate', event => {
+  const cacheWhitelist = [CACHE_NAME];
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cacheName => {
+          if (cacheWhitelist.indexOf(cacheName) === -1) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
   );
 });
