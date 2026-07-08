@@ -365,69 +365,86 @@ function gantiTabJadwal(tab) {
 
 function loadJadwal() {
   eksekusiProteksiAdmin();
-
   document.getElementById('tabelJadwalSaya').innerHTML = "<tr><td colspan='2'>Memuat...</td></tr>";
   document.getElementById('tabelJadwalGlobal').innerHTML = "<tr><td colspan='4'>Memuat...</td></tr>";
   document.getElementById('tabelHutangBody').innerHTML = "<tr><td colspan='4'>Memuat...</td></tr>";
 
-  fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "get_jadwal", nama: userData.nama }) })
-    .then(res => res.json()).then(res => {
+  // Menggunakan fetchWithTimeout agar kebal sinyal lemah
+  fetchWithTimeout(GAS_URL, { method: "POST", body: JSON.stringify({ action: "get_jadwal", nama: userData.nama }) })
+    .then(res => res.json())
+    .then(res => {
+      
+      // 1. PROSES JADWAL PRIBADI
       const tbSaya = document.getElementById('tabelJadwalSaya');
-      tbSaya.innerHTML = res.jadwalPribadi.length ? "" : "<tr><td colspan='2'>Jadwal Anda belum turun.</td></tr>";
-      res.jadwalPribadi.forEach(r => {
-        let badgeClass = r.shift.includes("Shift 1") ? "badge-shift1" : (r.shift.includes("Shift 2") ? "badge-shift2" : "badge-off");
-        tbSaya.innerHTML += `<tr><td><b>${r.tgl}</b></td><td><span class="${badgeClass}">${r.shift}</span></td></tr>`;
-      });
+      tbSaya.innerHTML = (res.jadwalPribadi && res.jadwalPribadi.length) ? "" : "<tr><td colspan='2'>Jadwal Anda belum turun.</td></tr>";
+      
+      if (res.jadwalPribadi) {
+        res.jadwalPribadi.forEach(r => {
+          let shiftNama = r.shift || "-";
+          let badgeClass = shiftNama.includes("Shift 1") ? "badge-shift1" : (shiftNama.includes("Shift 2") ? "badge-shift2" : "badge-off");
+          tbSaya.innerHTML += `<tr><td><b>${r.tgl || '-'}</b></td><td><span class="${badgeClass}">${shiftNama}</span></td></tr>`;
+        });
+      }
 
+      // 2. PROSES JADWAL GLOBAL
       const tbGlobal = document.getElementById('tabelJadwalGlobal');
-      tbGlobal.innerHTML = res.jadwalGlobal.length ? "" : "<tr><td colspan='4'>Data kosong.</td></tr>";
-      res.jadwalGlobal.forEach(r => {
-        tbGlobal.innerHTML += `<tr><td>${r.tgl}</td><td>${r.s1}</td><td>${r.s2}</td><td>${r.off}</td></tr>`;
-      });
+      tbGlobal.innerHTML = (res.jadwalGlobal && res.jadwalGlobal.length) ? "" : "<tr><td colspan='4'>Data kosong.</td></tr>";
+      
+      if (res.jadwalGlobal) {
+        res.jadwalGlobal.forEach(r => {
+          tbGlobal.innerHTML += `<tr><td>${r.tgl || '-'}</td><td>${r.s1 || '-'}</td><td>${r.s2 || '-'}</td><td>${r.off || '-'}</td></tr>`;
+        });
+      }
 
+      // 3. PROSES JADWAL HUTANG (DIAMANKAN AGAR TIDAK BLANK/CRASH)
       const tbHutang = document.getElementById('tabelHutangBody');
-      tbHutang.innerHTML = res.hutang.length ? "" : "<tr><td colspan='4'>Tidak ada hutang.</td></tr>";
-      res.hutang.forEach(r => {
-        // 1. Format tanggal agar terbaca rapi dari data JSON
-        let tgl = r[0];
-        try {
-          let dateObj = new Date(r[0]);
-          if (!isNaN(dateObj)) tgl = dateObj.toLocaleDateString('id-ID');
-        } catch(e) {}
-        
-        // 2. Mencegah sistem crash jika kolom status (ke-4) kosong di Spreadsheet
-        let status = r[3] ? r[3].toString() : "Belum Lunas";
-        let statusWarna = status.includes("Lunas") ? "style='color:green; font-weight:bold;'" : "style='color:red;'";
-        
-        tbHutang.innerHTML += `<tr><td>${tgl}</td><td>${r[1] || '-'}</td><td>${r[2] || '-'}</td><td ${statusWarna}>${status}</td></tr>`;
-      });
+      tbHutang.innerHTML = (res.hutang && res.hutang.length) ? "" : "<tr><td colspan='4'>Tidak ada hutang.</td></tr>";
+      
+      if (res.hutang) {
+        res.hutang.forEach(r => {
+          if (!r || r.length < 4) return; // Lewati jika baris benar-benar kosong murni
+          
+          let tgl = r[0];
+          try {
+            let dateObj = new Date(r[0]);
+            if (!isNaN(dateObj)) tgl = dateObj.toLocaleDateString('id-ID');
+          } catch(e) {}
+          
+          // Amankan kolom status agar tidak memicu .toString() dari kolom kosong (undefined)
+          let statusText = r[3] ? r[3].toString() : "Belum Lunas";
+          let statusWarna = statusText.includes("Lunas") ? "style='color:green; font-weight:bold;'" : "style='color:red;'";
+          
+          tbHutang.innerHTML += `<tr><td>${tgl}</td><td>${r[1] || '-'}</td><td>${r[2] || '-'}</td><td ${statusWarna}>${statusText}</td></tr>`;
+        });
+      }
 
-      // --- REVISI: Memasukkan Daftar Nama Security ke Dropdown <select> ---
+      // 4. PROSES DAFTAR DROPDOWN UTK MENU ADMIN
       if (res.daftarSecurity && res.daftarSecurity.length > 0) {
         const selectSakit = document.getElementById('secSakit');
         const selectPengganti = document.getElementById('secPengganti');
         
-        // Simpan sementara nilai lama yang sempat terpilih agar tidak ter-reset mendadak
-        const valSakitLama = selectSakit.value;
-        const valPenggantiLama = selectPengganti.value;
+        if (selectSakit && selectPengganti) {
+          const valSakitLama = selectSakit.value;
+          const valPenggantiLama = selectPengganti.value;
 
-        let opsiHtml = '<option value="" disabled selected>-- Pilih Nama Security --</option>';
-        res.daftarSecurity.forEach(nama => {
-          opsiHtml += `<option value="${nama}">${nama}</option>`;
-        });
+          let opsiHtml = '<option value="" disabled selected>-- Pilih Nama Security --</option>';
+          res.daftarSecurity.forEach(nama => {
+            opsiHtml += `<option value="${nama}">${nama}</option>`;
+          });
+          
+          selectSakit.innerHTML = opsiHtml;
+          selectPengganti.innerHTML = opsiHtml;
 
-        selectSakit.innerHTML = opsiHtml;
-        selectPengganti.innerHTML = opsiHtml;
-
-        // Kembalikan ke nilai pilihan semula apabila sudah ada yang dipilih
-        if(valSakitLama) selectSakit.value = valSakitLama;
-        if(valPenggantiLama) selectPengganti.value = valPenggantiLama;
+          if(valSakitLama) selectSakit.value = valSakitLama;
+          if(valPenggantiLama) selectPengganti.value = valPenggantiLama;
+        }
       }
-    }).catch(e => {
-      alert("Gagal memuat jadwal dari server.");
+    })
+    .catch(e => {
+      console.error(e);
+      alert("Gagal memuat jadwal dari server. Periksa jaringan internet atau pastikan format baris data di Google Sheets benar.");
     });
 }
-
 function prosesTukarShift() {
   const tgl = document.getElementById('tglTukar').value;
   const sakit = document.getElementById('secSakit').value;
