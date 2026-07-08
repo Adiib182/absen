@@ -167,7 +167,7 @@ th { background: var(--primary); color: white; }
 
 <script>
 // PASTIKAN LINK INI ADALAH URL DARI HASIL "NEW DEPLOYMENT" YANG TERAKHIR
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzrn6f94i0niH9fuCszw7TVzyVJ21D6WgkHfOVZqTWjsnbUuxCwdLEKvJK2L1EnFl5cZQ/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxYYR4yn_ATvARUZD8V4p3UyQoqR7IetAnLphRAko-kYuUMD3eZFV47D4G8JMNK-h1x1w/exec";
 const KANTOR_LAT = -6.427747; const KANTOR_LON = 106.760689; const RADIUS_MAKSIMAL = 50;
 
 let userData = {};
@@ -313,10 +313,11 @@ function mulaiKameraDanGPS() {
     .then(stream => { video.srcObject = stream; })
     .catch(err => alert("Izin kamera ditolak!"));
 
+  // --- REVISI: Ambil lokasi sekali saja, bukan dipantau terus-menerus ---
   if (navigator.geolocation) {
-    navigator.geolocation.watchPosition(cekLokasi, () => {
-      document.getElementById('statusLokasi').innerText = "Gagal membaca GPS";
-    }, { enableHighAccuracy: true });
+    navigator.geolocation.getCurrentPosition(cekLokasi, () => {
+      document.getElementById('statusLokasi').innerText = "Gagal membaca GPS, pastikan izin lokasi nyala.";
+    }, { enableHighAccuracy: true, maximumAge: 10000, timeout: 10000 });
   }
 }
 
@@ -392,11 +393,17 @@ function kirimAbsen(tipe) {
   document.getElementById('btnMasuk').disabled = true;
   document.getElementById('btnPulang').disabled = true;
 
-  canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+  // --- REVISI: Kompresi ukuran gambar ---
+  const maxLebar = 480; // Resolusi diturunkan agar super ringan
+  const rasio = video.videoHeight / video.videoWidth;
+  canvas.width = maxLebar;
+  canvas.height = maxLebar * rasio;
   canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+
   const payload = {
     action: "absen", nama: userData.nama, departemen: userData.departemen,
-    status: tipe, shift: shift, foto: canvas.toDataURL('image/jpeg', 0.6)
+    status: tipe, shift: shift, 
+    foto: canvas.toDataURL('image/jpeg', 0.4) // Kualitas diturunkan ke 40% (0.4)
   };
 
   // 2. TAMPILKAN STATUS LOADING YANG JELAS
