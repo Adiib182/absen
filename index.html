@@ -407,7 +407,7 @@ function kirimAbsen(tipe) {
   document.getElementById('btnPulang').disabled = true;
 
   // --- REVISI: Kompresi ukuran gambar ---
-  const maxLebar = 480; // Resolusi diturunkan agar super ringan
+  const maxLebar = 320; // Resolusi diturunkan agar super ringan
   const rasio = video.videoHeight / video.videoWidth;
   canvas.width = maxLebar;
   canvas.height = maxLebar * rasio;
@@ -416,7 +416,7 @@ function kirimAbsen(tipe) {
   const payload = {
     action: "absen", nama: userData.nama, departemen: userData.departemen,
     status: tipe, shift: shift, 
-    foto: canvas.toDataURL('image/jpeg', 0.4) // Kualitas diturunkan ke 40% (0.4)
+    foto: canvas.toDataURL('image/jpeg', 0.3) // Kualitas diturunkan ke 40% (0.4)
   };
 
   // 2. TAMPILKAN STATUS LOADING YANG JELAS
