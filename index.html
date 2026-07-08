@@ -93,10 +93,23 @@ th { background: var(--primary); color: white; }
   <div class="card" id="adminMenuOnly" style="display:none; border: 2px solid #ffc107;">
     <h3 style="margin-top:0;">🔄 Admin: Form Tukar Shift</h3>
     <p style="font-size:12px; color:gray;">Jadwal utama akan otomatis terganti berdasarkan nama di bawah ini.</p>
+    
+    <div id="adminTukarStatus" class="alert" style="margin-top: 5px; margin-bottom: 10px;"></div>
+
+    <label style="font-size: 12px; font-weight: bold; color: #333; display: block; margin-top: 8px;">Tanggal Tukar:</label>
     <input type="date" id="tglTukar">
-    <input type="text" id="secSakit" placeholder="Nama Security yg Izin/Sakit">
-    <input type="text" id="secPengganti" placeholder="Nama Security Pengganti">
-    <button onclick="prosesTukarShift()" style="background:#ffc107; color:#000;">Tukar & Update Jadwal</button>
+    
+    <label style="font-size: 12px; font-weight: bold; color: #333; display: block; margin-top: 8px;">Security yg Izin/Sakit:</label>
+    <select id="secSakit">
+      <option value="" disabled selected>-- Pilih Security yg Sakit --</option>
+    </select>
+    
+    <label style="font-size: 12px; font-weight: bold; color: #333; display: block; margin-top: 8px;">Security Pengganti:</label>
+    <select id="secPengganti">
+      <option value="" disabled selected>-- Pilih Security Pengganti --</option>
+    </select>
+    
+    <button id="btnProsesTukar" onclick="prosesTukarShift()" style="background:#ffc107; color:#000; margin-top: 15px;">Tukar & Update Jadwal</button>
   </div>
 
   <div class="card">
@@ -469,6 +482,28 @@ function loadJadwal() {
         let statusWarna = r[3].toString().includes("Lunas") ? "style='color:green; font-weight:bold;'" : "style='color:red;'";
         tbHutang.innerHTML += `<tr><td>${tgl}</td><td>${r[1]}</td><td>${r[2]}</td><td ${statusWarna}>${r[3]}</td></tr>`;
       });
+
+      // --- REVISI: Memasukkan Daftar Nama Security ke Dropdown <select> ---
+      if (res.daftarSecurity && res.daftarSecurity.length > 0) {
+        const selectSakit = document.getElementById('secSakit');
+        const selectPengganti = document.getElementById('secPengganti');
+        
+        // Simpan sementara nilai lama yang sempat terpilih agar tidak ter-reset mendadak
+        const valSakitLama = selectSakit.value;
+        const valPenggantiLama = selectPengganti.value;
+
+        let opsiHtml = '<option value="" disabled selected>-- Pilih Nama Security --</option>';
+        res.daftarSecurity.forEach(nama => {
+          opsiHtml += `<option value="${nama}">${nama}</option>`;
+        });
+
+        selectSakit.innerHTML = opsiHtml;
+        selectPengganti.innerHTML = opsiHtml;
+
+        // Kembalikan ke nilai pilihan semula apabila sudah ada yang dipilih
+        if(valSakitLama) selectSakit.value = valSakitLama;
+        if(valPenggantiLama) selectPengganti.value = valPenggantiLama;
+      }
     }).catch(e => {
       alert("Gagal memuat jadwal dari server.");
     });
@@ -478,23 +513,63 @@ function prosesTukarShift() {
   const tgl = document.getElementById('tglTukar').value;
   const sakit = document.getElementById('secSakit').value;
   const pengganti = document.getElementById('secPengganti').value;
+  const statusEl = document.getElementById('adminTukarStatus');
+  const btn = document.getElementById('btnProsesTukar');
 
-  if(!tgl || !sakit || !pengganti) return alert("Pilih tanggal dan lengkapi nama!");
+  // Validasi Input Kosong
+  if(!tgl || !sakit || !pengganti) {
+    statusEl.style.display = "block";
+    statusEl.className = "alert alert-warning";
+    statusEl.innerText = "⚠️ Pilih tanggal dan pilih kedua nama security!";
+    return;
+  }
+
+  // Validasi Pencegahan menukar nama yang sama
+  if(sakit === pengganti) {
+    statusEl.style.display = "block";
+    statusEl.className = "alert alert-warning";
+    statusEl.innerText = "⚠️ Nama yang sakit dan pengganti tidak boleh sama!";
+    return;
+  }
+
+  // Set Keadaan Loading
+  btn.innerText = "⏳ Memproses Tukar Shift...";
+  btn.disabled = true;
+  statusEl.style.display = "none";
 
   fetch(GAS_URL, {
     method: "POST",
     body: JSON.stringify({ action: "tukar_shift", tanggal: tgl, sakit: sakit, pengganti: pengganti })
   })
   .then(res => res.json()).then(res => {
+    btn.innerText = "Tukar & Update Jadwal";
+    btn.disabled = false;
+    statusEl.style.display = "block";
+
     if(res.status === "error") {
-      alert(res.message);
+      statusEl.className = "alert alert-warning";
+      statusEl.innerText = "❌ " + res.message;
     } else {
-      alert(res.message);
+      statusEl.className = "alert alert-info"; // Tampilan sukses warna info aplikasi
+      statusEl.innerText = "✅ " + res.message;
+      
+      // Muat ulang tabel jadwal di bawahnya agar langsung berubah realtime
       loadJadwal();
+      
+      // Reset Form Isian
       document.getElementById('tglTukar').value = "";
       document.getElementById('secSakit').value = "";
       document.getElementById('secPengganti').value = "";
+      
+      // Sembunyikan pesan sukses otomatis setelah 7 detik agar form rapi kembali
+      setTimeout(() => { statusEl.style.display = "none"; }, 7000);
     }
+  }).catch(e => {
+    btn.innerText = "Tukar & Update Jadwal";
+    btn.disabled = false;
+    statusEl.style.display = "block";
+    statusEl.className = "alert alert-warning";
+    statusEl.innerText = "❌ Gagal terhubung ke server. Periksa koneksi internet.";
   });
 }
 
