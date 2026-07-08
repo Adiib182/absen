@@ -180,98 +180,40 @@ th { background: var(--primary); color: white; }
 
 <script>
 // PASTIKAN LINK INI ADALAH URL DARI HASIL "NEW DEPLOYMENT" YANG TERAKHIR
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxYYR4yn_ATvARUZD8V4p3UyQoqR7IetAnLphRAko-kYuUMD3eZFV47D4G8JMNK-h1x1w/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwQ_pBwRjLSLAyoAo9FSTMcpvmP2cFaCN7pcFYZ1UxfQ1N3Omt0JviwEPB4kKQpl7osJw/exec";
 const KANTOR_LAT = -6.427747; const KANTOR_LON = 106.760689; const RADIUS_MAKSIMAL = 50;
 
-let userData = {};
-let lokasiValid = false;
-let currentPageLap = 1;
-const video = document.getElementById('video');
-const canvas = document.getElementById('canvas');
+let userData = {}; let lokasiValid = false; let currentPageLap = 1;
+const video = document.getElementById('video'); const canvas = document.getElementById('canvas');
+
+// Fungsi pencegah Hang/Bengong saat sinyal jelek (Maks 15 Detik)
+async function fetchWithTimeout(resource, options = {}) {
+  const { timeout = 15000 } = options;
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  const response = await fetch(resource, { ...options, signal: controller.signal });
+  clearTimeout(id);
+  return response;
+}
 
 function pindahScreen(screenId, navEl) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(screenId).classList.add('active');
-
   if(navEl) {
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     navEl.classList.add('active');
   }
-
-  if(screenId === 'jadwalScreen') {
-    eksekusiProteksiAdmin();
-  }
+  if(screenId === 'jadwalScreen') eksekusiProteksiAdmin();
 }
 
 function eksekusiProteksiAdmin() {
-  const adminBox = document.getElementById('adminMenuOnly');
-  const navLaporan = document.getElementById('navAdminLaporan');
-  const navAbsen = document.getElementById('navAbsen'); // Element Navigasi Absen
-
-  if(userData.role && userData.role.toString().trim().toLowerCase() === "admin") {
-    adminBox.style.display = "block";
-    navLaporan.style.display = "flex";
-    navAbsen.style.display = "none"; // Hilangkan tombol Absen untuk Admin
-  } else {
-    adminBox.style.display = "none";
-    navLaporan.style.display = "none";
-    navAbsen.style.display = "flex"; // Tampilkan tombol Absen untuk Regu/Security
-  }
+  const isAdmin = userData.role && userData.role.toString().trim().toLowerCase() === "admin";
+  document.getElementById('adminMenuOnly').style.display = isAdmin ? "block" : "none";
+  document.getElementById('navAdminLaporan').style.display = isAdmin ? "flex" : "none";
+  document.getElementById('navAbsen').style.display = isAdmin ? "none" : "flex";
 }
 
-function loadLaporan(page = 1) {
-  currentPageLap = page;
-  const tb = document.getElementById('tbLaporanBody');
-  tb.innerHTML = "<tr><td colspan='5'>Memuat data...</td></tr>";
-  
-  document.getElementById('btnPrevLap').disabled = true;
-  document.getElementById('btnNextLap').disabled = true;
-
-  fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "get_laporan", page: currentPageLap }) })
-    .then(res => res.text())
-    .then(text => {
-      try {
-        const res = JSON.parse(text);
-        if (res.status === "error") {
-          tb.innerHTML = `<tr><td colspan='5' style='color:red;'>Error Server: ${res.message}</td></tr>`;
-          return;
-        }
-        if (res.data.length === 0) {
-          tb.innerHTML = "<tr><td colspan='5'>Tidak ada riwayat absen.</td></tr>";
-          document.getElementById('infoPageLap').innerText = "";
-          return;
-        }
-        
-        tb.innerHTML = "";
-        res.data.forEach(r => {
-          let warnaStatus = r.status === "Masuk" ? "color:green;" : "color:red;";
-          let tombolFoto = r.foto ? `<a href="${r.foto}" target="_blank" style="background:#007bff; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:11px;">Lihat</a>` : "-";
-          tb.innerHTML += `<tr>
-            <td style="white-space: nowrap;">${r.waktu}</td>
-            <td><b>${r.nama}</b></td>
-            <td style="${warnaStatus} font-weight:bold;">${r.status}</td>
-            <td>${r.shift}</td>
-            <td>${tombolFoto}</td>
-          </tr>`;
-        });
-
-        document.getElementById('btnPrevLap').disabled = !res.hasPrev;
-        document.getElementById('btnNextLap').disabled = !res.hasNext;
-        document.getElementById('infoPageLap').innerText = `Halaman ${res.page} dari ${res.totalPages || 1}`;
-        
-      } catch (e) {
-        tb.innerHTML = `<tr><td colspan='5' style='color:red;'><b>Gagal Membaca Data:</b> Pastikan link Web App baru sudah diupdate. Error Code: ${text.substring(0,50)}</td></tr>`;
-      }
-    }).catch(e => {
-      tb.innerHTML = "<tr><td colspan='5' style='color:red;'>Gagal terhubung ke jaringan.</td></tr>";
-    });
-}
-
-function gantiPageLap(arah) {
-  loadLaporan(currentPageLap + arah);
-}
-
-function prosesLogin() {
+async function prosesLogin() {
   const user = document.getElementById('loginUser').value;
   const pass = document.getElementById('loginPass').value;
   const btn = document.getElementById('btnLogin');
@@ -279,43 +221,39 @@ function prosesLogin() {
 
   if(!user || !pass) return alert("Isi username dan password!");
 
-  btn.innerText = "Memverifikasi..."; btn.disabled = true;
+  btn.innerText = "Memverifikasi..."; btn.disabled = true; status.style.display = "none";
 
-  fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "login", username: user, password: pass }) })
-    .then(res => res.json()).then(res => {
-      btn.innerText = "Masuk"; btn.disabled = false;
-      if(res.status === "success") {
-        userData = { nama: res.nama, role: res.role, departemen: res.departemen };
-        document.getElementById('namaUserSpan').innerText = userData.nama;
-        document.getElementById('deptUserSpan').innerText = userData.departemen;
-
-        eksekusiProteksiAdmin(); // Cek perizinan role admin vs user
-
-        document.getElementById('loginScreen').classList.remove('active');
-        document.getElementById('bottomNav').style.display = "flex";
-        
-        // Cek Role untuk mengarahkan layar pertama kali
-        if(userData.role && userData.role.toString().trim().toLowerCase() === "admin") {
-          // Jika Admin: Langsung masuk ke Laporan (Kamera & GPS tidak perlu menyala)
-          pindahScreen('laporanScreen', document.getElementById('navAdminLaporan'));
-          loadLaporan();
-        } else {
-          // Jika Karyawan/User Biasa: Langsung masuk ke Kamera Absen
-          pindahScreen('absenScreen', document.getElementById('navAbsen'));
-          mulaiKameraDanGPS();
-        }
-
+  try {
+    const res = await fetchWithTimeout(GAS_URL, { method: "POST", body: JSON.stringify({ action: "login", username: user, password: pass }) });
+    const data = await res.json();
+    btn.innerText = "Masuk"; btn.disabled = false;
+    
+    if(data.status === "success") {
+      userData = { nama: data.nama, role: data.role, departemen: data.departemen };
+      document.getElementById('namaUserSpan').innerText = userData.nama;
+      document.getElementById('deptUserSpan').innerText = userData.departemen;
+      eksekusiProteksiAdmin();
+      document.getElementById('loginScreen').classList.remove('active');
+      document.getElementById('bottomNav').style.display = "flex";
+      
+      if(userData.role.toLowerCase() === "admin") {
+        pindahScreen('laporanScreen', document.getElementById('navAdminLaporan')); loadLaporan();
       } else {
-        status.style.display = "block"; status.innerText = res.message;
+        pindahScreen('absenScreen', document.getElementById('navAbsen')); mulaiKameraDanGPS();
       }
-    }).catch(e => alert("Gagal terhubung ke server."));
+    } else {
+      status.style.display = "block"; status.innerText = data.message;
+    }
+  } catch (e) {
+    btn.innerText = "Masuk"; btn.disabled = false;
+    status.style.display = "block"; status.innerText = "Gagal terhubung. Sinyal lemah atau server sibuk.";
+  }
 }
 
 function logout() {
   userData = {};
   document.getElementById('adminMenuOnly').style.display = "none";
-  document.getElementById('loginUser').value = "";
-  document.getElementById('loginPass').value = "";
+  ['loginUser', 'loginPass'].forEach(id => document.getElementById(id).value = "");
   document.getElementById('loginStatus').style.display = "none";
   document.getElementById('bottomNav').style.display = "none";
   pindahScreen('loginScreen');
@@ -326,10 +264,9 @@ function mulaiKameraDanGPS() {
     .then(stream => { video.srcObject = stream; })
     .catch(err => alert("Izin kamera ditolak!"));
 
-  // --- REVISI: Ambil lokasi sekali saja, bukan dipantau terus-menerus ---
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(cekLokasi, () => {
-      document.getElementById('statusLokasi').innerText = "Gagal membaca GPS, pastikan izin lokasi nyala.";
+      document.getElementById('statusLokasi').innerText = "Gagal membaca GPS.";
     }, { enableHighAccuracy: true, maximumAge: 10000, timeout: 10000 });
   }
 }
@@ -343,101 +280,69 @@ function cekLokasi(position) {
 
   const statusEl = document.getElementById('statusLokasi');
   if (jarak <= RADIUS_MAKSIMAL) {
-    statusEl.style.display = "none";
-    lokasiValid = true;
-    validasiAbsen();
+    statusEl.style.display = "none"; lokasiValid = true; validasiAbsen();
   } else {
-    statusEl.style.display = "block";
-    statusEl.className = "alert alert-warning";
+    statusEl.style.display = "block"; statusEl.className = "alert alert-warning";
     statusEl.innerText = `Luar area. Jarak Anda: ${Math.round(jarak)}m`;
-    lokasiValid = false;
-    document.getElementById('btnMasuk').disabled = true;
-    document.getElementById('btnPulang').disabled = true;
+    lokasiValid = false; document.getElementById('btnMasuk').disabled = true; document.getElementById('btnPulang').disabled = true;
   }
 }
 
-function validasiAbsen() {
+async function validasiAbsen() {
   const shift = document.getElementById('shiftPilihan').value;
   if(!shift || !lokasiValid) return;
 
-  const btnMasuk = document.getElementById('btnMasuk');
-  const btnPulang = document.getElementById('btnPulang');
+  const btnMasuk = document.getElementById('btnMasuk'); const btnPulang = document.getElementById('btnPulang');
   const statusEl = document.getElementById('statusLokasi');
-
-  // 1. Sembunyikan alert agar tidak ada kotak kuning yang muncul-hilang
+  
   statusEl.style.display = "none";
+  btnMasuk.innerText = "⏳ Cek Data..."; btnPulang.innerText = "⏳ Cek Data...";
+  btnMasuk.disabled = true; btnPulang.disabled = true;
 
-  // 2. Ubah teks tombol jadi indikator loading dan nonaktifkan sementara
-  btnMasuk.innerText = "⏳ Cek Data...";
-  btnPulang.innerText = "⏳ Cek Data...";
-  btnMasuk.disabled = true;
-  btnPulang.disabled = true;
+  try {
+    const res = await fetchWithTimeout(GAS_URL, { method: "POST", body: JSON.stringify({ action: "cek_status_absen", nama: userData.nama, shift: shift }) });
+    const data = await res.json();
+    
+    btnMasuk.innerText = "📥 Masuk"; btnPulang.innerText = "📤 Pulang";
+    btnMasuk.disabled = data.sudahMasuk; btnPulang.disabled = data.sudahPulang;
 
-  fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "cek_status_absen", nama: userData.nama, shift: shift }) })
-    .then(res => res.json()).then(res => {
-      // 3. Kembalikan teks tombol ke semula setelah server membalas
-      btnMasuk.innerText = "📥 Masuk";
-      btnPulang.innerText = "📤 Pulang";
-
-      // 4. Aktifkan/nonaktifkan tombol sesuai riwayat server
-      btnMasuk.disabled = res.sudahMasuk;
-      btnPulang.disabled = res.sudahPulang;
-
-      // 5. Kotak alert HANYA muncul jika kedua absen benar-benar sudah tuntas
-      if (res.sudahMasuk && res.sudahPulang) {
-        statusEl.style.display = "block";
-        statusEl.className = "alert alert-info";
-        statusEl.innerText = "Absen Shift ini sudah selesai.";
-      }
-    })
-    .catch(e => {
-      // Jaga-jaga kalau sinyal jelek saat ngecek
-      btnMasuk.innerText = "📥 Masuk";
-      btnPulang.innerText = "📤 Pulang";
-      alert("Gagal mengecek riwayat absen. Pastikan internet stabil.");
-    });
+    if (data.sudahMasuk && data.sudahPulang) {
+      statusEl.style.display = "block"; statusEl.className = "alert alert-info"; statusEl.innerText = "Absen Shift ini sudah selesai.";
+    }
+  } catch(e) {
+    btnMasuk.innerText = "📥 Masuk"; btnPulang.innerText = "📤 Pulang";
+    alert("Gagal mengecek riwayat absen. Sinyal lemah.");
+  }
 }
 
-function kirimAbsen(tipe) {
+async function kirimAbsen(tipe) {
   const shift = document.getElementById('shiftPilihan').value;
-  if(!shift) return alert("Pilih shift 12 Jam Anda!");
+  if(!shift) return alert("Pilih shift Anda!");
 
-  // 1. LANGSUNG KUNCI TOMBOL SAAT DIKLIK MENCEGAH SPAM / DOUBLE KLIK
-  document.getElementById('btnMasuk').disabled = true;
-  document.getElementById('btnPulang').disabled = true;
+  document.getElementById('btnMasuk').disabled = true; document.getElementById('btnPulang').disabled = true;
 
-  // --- REVISI: Kompresi ukuran gambar ---
-  const maxLebar = 320; // Resolusi diturunkan agar super ringan
+  // Kompresi Ekstrem (Lebar 320px, Kualitas 30%)
+  const maxLebar = 320; 
   const rasio = video.videoHeight / video.videoWidth;
-  canvas.width = maxLebar;
-  canvas.height = maxLebar * rasio;
+  canvas.width = maxLebar; canvas.height = maxLebar * rasio;
   canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-
-  const payload = {
-    action: "absen", nama: userData.nama, departemen: userData.departemen,
-    status: tipe, shift: shift, 
-    foto: canvas.toDataURL('image/jpeg', 0.3) // Kualitas diturunkan ke 40% (0.4)
-  };
-
-  // 2. TAMPILKAN STATUS LOADING YANG JELAS
+  
+  const payload = { action: "absen", nama: userData.nama, departemen: userData.departemen, status: tipe, shift: shift, foto: canvas.toDataURL('image/jpeg', 0.3) };
+  
   const statusEl = document.getElementById('statusLokasi');
-  statusEl.style.display = "block";
-  statusEl.className = "alert alert-info"; // Pakai warna biru
-  statusEl.innerText = "⏳ Sedang mengirim data & foto... Mohon tunggu sebentar.";
+  statusEl.style.display = "block"; statusEl.className = "alert alert-info";
+  statusEl.innerText = "⏳ Sedang mengirim data... Jangan tutup layar.";
 
-  fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) })
-    .then(res => res.json()).then(res => {
-      alert(res.message);
-      // Pengecekan ulang ini akan mengunci tombol secara permanen untuk shift tersebut
-      validasiAbsen(); 
-    })
-    .catch(e => {
-      alert("Gagal mengirim data! Pastikan internet stabil.");
-      // Buka kunci tombol lagi jika proses ternyata gagal agar user bisa coba lagi
-      validasiAbsen(); 
-    });
+  try {
+    const res = await fetchWithTimeout(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
+    const data = await res.json();
+    alert(data.message);
+    validasiAbsen(); 
+  } catch(e) {
+    alert("Waktu habis! Sinyal internet terputus saat upload gambar. Coba lagi.");
+    validasiAbsen(); 
+  }
 }
-
 function gantiTabJadwal(tab) {
   document.getElementById('btnJadwalSaya').classList.remove('active');
   document.getElementById('btnJadwalGlobal').classList.remove('active');
