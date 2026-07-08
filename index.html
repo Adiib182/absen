@@ -478,9 +478,18 @@ function loadJadwal() {
       const tbHutang = document.getElementById('tabelHutangBody');
       tbHutang.innerHTML = res.hutang.length ? "" : "<tr><td colspan='4'>Tidak ada hutang.</td></tr>";
       res.hutang.forEach(r => {
-        let tgl = r[0] instanceof Date ? r[0].toLocaleDateString('id-ID') : r[0];
-        let statusWarna = r[3].toString().includes("Lunas") ? "style='color:green; font-weight:bold;'" : "style='color:red;'";
-        tbHutang.innerHTML += `<tr><td>${tgl}</td><td>${r[1]}</td><td>${r[2]}</td><td ${statusWarna}>${r[3]}</td></tr>`;
+        // 1. Format tanggal agar terbaca rapi dari data JSON
+        let tgl = r[0];
+        try {
+          let dateObj = new Date(r[0]);
+          if (!isNaN(dateObj)) tgl = dateObj.toLocaleDateString('id-ID');
+        } catch(e) {}
+        
+        // 2. Mencegah sistem crash jika kolom status (ke-4) kosong di Spreadsheet
+        let status = r[3] ? r[3].toString() : "Belum Lunas";
+        let statusWarna = status.includes("Lunas") ? "style='color:green; font-weight:bold;'" : "style='color:red;'";
+        
+        tbHutang.innerHTML += `<tr><td>${tgl}</td><td>${r[1] || '-'}</td><td>${r[2] || '-'}</td><td ${statusWarna}>${status}</td></tr>`;
       });
 
       // --- REVISI: Memasukkan Daftar Nama Security ke Dropdown <select> ---
