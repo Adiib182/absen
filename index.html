@@ -264,6 +264,67 @@ function logout() {
   pindahScreen('loginScreen');
 }
 
+// Fungsi untuk memuat laporan absensi dari server
+function loadLaporan() {
+  const tbBody = document.getElementById('tbLaporanBody');
+  const infoPage = document.getElementById('infoPageLap');
+  const btnPrev = document.getElementById('btnPrevLap');
+  const btnNext = document.getElementById('btnNextLap');
+
+  // Set tampilan loading
+  tbBody.innerHTML = "<tr><td colspan='5'>⏳ Memuat data...</td></tr>";
+  btnPrev.disabled = true;
+  btnNext.disabled = true;
+
+  // Panggil data ke Google Apps Script
+  fetchWithTimeout(GAS_URL, {
+    method: "POST",
+    body: JSON.stringify({ action: "get_laporan", page: currentPageLap })
+  })
+  .then(res => res.json())
+  .then(res => {
+    if (res.status === "success") {
+      tbBody.innerHTML = "";
+      
+      // Render data jika ada
+      if (res.data && res.data.length > 0) {
+        res.data.forEach(row => {
+          let fotoImg = row.foto ? `<a href="${row.foto}" target="_blank" style="color:var(--primary); text-decoration:none; font-weight:bold;">Lihat 📸</a>` : "-";
+          tbBody.innerHTML += `<tr>
+            <td>${row.waktu}</td>
+            <td>${row.nama}</td>
+            <td><b>${row.status}</b></td>
+            <td>${row.shift}</td>
+            <td>${fotoImg}</td>
+          </tr>`;
+        });
+      } else {
+        tbBody.innerHTML = "<tr><td colspan='5'>Belum ada data absensi.</td></tr>";
+      }
+      
+      // Update info halaman dan tombol pagination
+      infoPage.innerText = `Halaman ${res.page} dari ${res.totalPages}`;
+      btnPrev.disabled = !res.hasPrev;
+      btnNext.disabled = !res.hasNext;
+      
+      // Simpan halaman saat ini
+      currentPageLap = res.page;
+    } else {
+      tbBody.innerHTML = `<tr><td colspan='5'>Gagal memuat: ${res.message}</td></tr>`;
+    }
+  })
+  .catch(e => {
+    console.error(e);
+    tbBody.innerHTML = "<tr><td colspan='5' style='color:red;'>Gagal terhubung ke server. Periksa sinyal internet Anda.</td></tr>";
+  });
+}
+
+// Fungsi untuk mengganti halaman laporan (Pagination)
+function gantiPageLap(arah) {
+  currentPageLap += arah;
+  loadLaporan();
+}
+  
 function mulaiKameraDanGPS() {
   navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
     .then(stream => { video.srcObject = stream; })
